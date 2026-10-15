@@ -1,0 +1,63 @@
+<!doctype html>
+<!-- Local fixture for `npm run dev`. Mimics a rendered permalink page; it is NOT the Tistory template
+     (see tistory/skin.html) and does not replace testing on a real Tistory blog. -->
+<html lang="ko" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fixture · Tistory AI Assistant</title>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="site-title" href="#">개발 블로그</a>
+      <nav class="site-nav" aria-label="메뉴"><ul><li><a href="#">홈</a></li><li><a href="#">태그</a></li></ul></nav>
+      <div class="header-actions">
+        <form class="search" role="search" onsubmit="return false;">
+          <label class="sr-only" for="search-input">블로그 검색</label>
+          <input id="search-input" type="search" placeholder="검색">
+          <button type="submit">검색</button>
+        </form>
+        <button type="button" class="icon-button" data-theme-toggle aria-label="다크 모드 전환"></button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container layout">
+    <main id="main" class="content">
+      <div class="post-layout">
+        <article class="post">
+          <header class="post-header">
+            <p class="post-category">Database</p>
+            <h1 class="post-title">PostgreSQL 인덱스와 EXPLAIN 이해하기</h1>
+            <time class="post-date">2026.10.16</time>
+          </header>
+          <div class="post-body" id="article-body">
+            <h2>인덱스란</h2>
+            <p>Lorem ipsum dolor sit amet. </p><p style="height:600px">긴 본문 자리</p>
+            <h3>B-tree</h3>
+            <p style="height:600px">B-tree 설명</p>
+            <h3>GIN</h3>
+            <p style="height:600px">GIN 설명</p>
+            <h2>EXPLAIN 읽기</h2>
+            <pre><code>EXPLAIN ANALYZE SELECT * FROM posts WHERE id = 1;</code></pre>
+            <p style="height:800px">실행 계획 설명</p>
+          </div>
+        </article>
+        <aside class="toc" data-toc aria-label="목차">
+          <button type="button" class="toc-toggle" data-toc-toggle aria-expanded="false">목차</button>
+          <ol class="toc-list"></ol>
+        </aside>
+      </div>
+    </main>
+    <aside class="sidebar" aria-label="사이드바">
+      <section class="sidebar-section"><h2>카테고리</h2><ul><li><a href="#">Database</a></li><li><a href="#">React</a></li></ul></section>
+    </aside>
+  </div>
+
+  <footer class="site-footer"><div class="container">© 개발 블로그</div></footer>
+  <button type="button" class="top-button" data-top-button aria-label="맨 위로" hidden>↑</button>
+  <div id="ai-assistant" data-api-base=""></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "tistory-ai-assistant-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "observability": { "enabled": true },
+  "vars": {
+    // Comma-separated. Add the blog origin (https://<blog>.tistory.com) before deploying.
+    "ALLOWED_ORIGINS": "http://localhost:5173"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "tistory-ai-assistant",
+      // Local dev works with this placeholder; replace with the id from `wrangler d1 create` before deploying.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

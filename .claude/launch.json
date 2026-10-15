@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "skin",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "-w", "skin"],
+      "port": 5173
+    }
+  ]
+}

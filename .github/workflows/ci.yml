@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Verify Tistory skin output
+        run: |
+          for f in skin.html index.xml style.css images/script.js; do
+            test -s "skin/dist/tistory/$f" || { echo "missing $f"; exit 1; }
+          done
+          cmp skin/tistory/skin.html skin/dist/tistory/skin.html
+      - name: Worker bundle (dry run)
+        run: npm run verify -w worker
+      - name: D1 migrations apply locally
+        run: npm run db:migrate:local -w worker

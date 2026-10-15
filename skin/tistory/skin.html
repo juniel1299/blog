@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>[##_page_title_##]</title>
+  <script>
+    // Set theme before paint to avoid a light flash in dark mode.
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('theme'); } catch (e) {}
+      if (t !== 'dark' && t !== 'light') {
+        t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body id="[##_body_id_##]">
+<s_t3>
+  <a class="skip-link" href="#main">본문 바로가기</a>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="site-title" href="[##_blog_link_##]">[##_title_##]</a>
+      <nav class="site-nav" aria-label="메뉴">[##_blog_menu_##]</nav>
+      <div class="header-actions">
+        <s_search>
+          <form class="search" role="search" onsubmit="[##_search_onclick_submit_##]; return false;">
+            <label class="sr-only" for="search-input">블로그 검색</label>
+            <input id="search-input" type="search" name="[##_search_name_##]" value="[##_search_text_##]" placeholder="검색">
+            <button type="submit">검색</button>
+          </form>
+        </s_search>
+        <button type="button" class="icon-button" data-theme-toggle aria-label="다크 모드 전환"></button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container layout">
+    <main id="main" class="content">
+      <s_list>
+        <section class="post-list">
+          <h2 class="list-title">[##_list_conform_##] <span class="list-count">[##_list_count_##]</span></h2>
+          <ul>
+            <s_list_rep>
+              <li class="post-list-item">
+                <a href="[##_list_rep_link_##]">[##_list_rep_title_##]</a>
+                <time>[##_list_rep_regdate_##]</time>
+              </li>
+            </s_list_rep>
+          </ul>
+        </section>
+      </s_list>
+
+      <s_article_rep>
+        <s_index_article_rep>
+          <article class="post-card">
+            <h2><a href="[##_article_rep_link_##]">[##_article_rep_title_##]</a></h2>
+            <p class="post-summary">[##_article_rep_summary_##]</p>
+            <time class="post-date">[##_article_rep_date_##]</time>
+          </article>
+        </s_index_article_rep>
+
+        <s_permalink_article_rep>
+          <div class="post-layout">
+            <article class="post">
+              <header class="post-header">
+                <p class="post-category">[##_article_rep_category_##]</p>
+                <h1 class="post-title">[##_article_rep_title_##]</h1>
+                <time class="post-date">[##_article_rep_date_##]</time>
+              </header>
+              <div class="post-body" id="article-body">[##_article_rep_desc_##]</div>
+            </article>
+            <aside class="toc" data-toc aria-label="목차">
+              <button type="button" class="toc-toggle" data-toc-toggle aria-expanded="false">목차</button>
+              <ol class="toc-list"></ol>
+            </aside>
+          </div>
+        </s_permalink_article_rep>
+      </s_article_rep>
+
+      <s_paging>
+        <nav class="paging" aria-label="페이지">
+          <a [##_prev_page_##] class="[##_no_more_prev_##]">이전</a>
+          <s_paging_rep><a [##_paging_rep_link_##] class="num">[##_paging_rep_link_num_##]</a></s_paging_rep>
+          <a [##_next_page_##] class="[##_no_more_next_##]">다음</a>
+        </nav>
+      </s_paging>
+    </main>
+
+    <aside class="sidebar" aria-label="사이드바">
+      <s_sidebar>
+        <s_sidebar_element>
+          <!-- 카테고리 -->
+          <section class="sidebar-section">
+            <h2>카테고리</h2>
+            [##_category_list_##]
+          </section>
+        </s_sidebar_element>
+      </s_sidebar>
+    </aside>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container">© [##_title_##]</div>
+  </footer>
+
+  <button type="button" class="top-button" data-top-button aria-label="맨 위로" hidden>↑</button>
+  <div id="ai-assistant" data-api-base=""></div>
+</s_t3>
+<script src="./images/script.js"></script>
+</body>
+</html>
