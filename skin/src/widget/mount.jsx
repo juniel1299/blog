@@ -12,7 +12,7 @@ export function mountWidget(element) {
   element.dataset.aiaMounted = 'true';
   try {
     const root = createRoot(element);
-    root.render(<ChatWidget />);
+    root.render(<ChatWidget apiBase={element.dataset.apiBase ?? ''} />);
     return root;
   } catch (error) {
     // Keep the rest of the skin working if the widget fails.

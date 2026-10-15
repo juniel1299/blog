@@ -1,5 +1,7 @@
 import { errorBody, json } from './http.js';
 import { readPost, runIngest } from './ingest/run.js';
+import { MAX_QUERY_CHARS } from './search/query.js';
+import { debugRankings } from './search/search.js';
 
 const MIN_TOKEN_LENGTH = 32;
 
@@ -35,6 +37,11 @@ export async function handleAdmin(request, env, { pathname, searchParams }, requ
       const id = searchParams.get('id') ?? '';
       if (!/^\d{1,9}$/.test(id)) return json(errorBody('INVALID_ID', 'id must be a post number', requestId), 400, headers);
       return json({ ...(await readPost({ url: `${env.BLOG_ORIGIN}/${id}` })), requestId }, 200, headers);
+    }
+    if (request.method === 'GET' && pathname === '/admin/search-debug') {
+      const q = (searchParams.get('q') ?? '').trim();
+      if (!q || q.length > MAX_QUERY_CHARS) return json(errorBody('INVALID_QUERY', 'q is required', requestId), 400, headers);
+      return json({ ...(await debugRankings(env, q)), requestId }, 200, headers);
     }
   } catch (error) {
     console.error(JSON.stringify({ requestId, event: 'admin_failed', path: pathname, error: String(error) }));

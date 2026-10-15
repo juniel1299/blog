@@ -21,6 +21,8 @@
   // Create once: npx wrangler vectorize create tistory-posts --dimensions=1024 --metric=cosine
   "vectorize": [{ "binding": "VECTORIZE", "index_name": "tistory-posts" }],
   "ai": { "binding": "AI" },
+  // Per-IP limit on the public search API (namespace_id is any account-unique integer string).
+  "ratelimits": [{ "name": "SEARCH_LIMITER", "namespace_id": "1001", "simple": { "limit": 20, "period": 60 } }],
   // Incremental sync: each run re-indexes at most 3 changed posts (free-plan CPU/subrequest limits).
   "triggers": { "crons": ["*/10 * * * *"] }
 }

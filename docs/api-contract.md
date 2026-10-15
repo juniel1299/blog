@@ -1,6 +1,6 @@
 # API Contract
 
-구현된 것: `GET /health/live`, `GET /health/ready`, 관리자 API(`/admin/*`). 챗봇 API는 **계획**이며 아직 없다.
+구현된 것: `GET /health/live`, `GET /health/ready`, `POST /api/v1/search`, 관리자 API(`/admin/*`). `GET /api/v1/posts/:postId/docs`는 **계획**(Phase 3).
 
 ## 공통
 
@@ -29,31 +29,39 @@
 | POST | `/admin/ingest` | 수집 1회 실행 결과 `{ indexed, skipped, failed, deleted, remaining }` (글 번호 배열, remaining은 남은 개수) | 500 `ADMIN_FAILED` (사이트맵 실패 등) |
 | GET | `/admin/preview?id=<글번호>` | 쓰기 없이 추출/청크 결과 `{ post, chunks }` | 400 `INVALID_ID`, 500 `ADMIN_FAILED` |
 
-## 계획 (Phase 2~3)
-
 ### `POST /api/v1/search`
 
 ```json
 // request
-{ "query": "PostgreSQL 인덱스 글 찾아줘" }
+{ "query": "인덱스에 대한 글 찾아줘" }
 
-// response
+// response 200
 {
+  "query": "인덱스에 대한 글 찾아줘",
   "results": [
     {
-      "postId": "123",
-      "title": "PostgreSQL 인덱스와 EXPLAIN 이해하기",
-      "url": "https://<blog>.tistory.com/123",
-      "preview": "B-tree 인덱스와 실행 계획으로 조회 성능을 확인하는 글입니다."
+      "postId": 122,
+      "title": "[Oracle SQL] Index 란? (ft. 뭐든 과하면 독이다)",
+      "url": "https://problem-child.tistory.com/122",
+      "category": "SQL(oracle)",
+      "heading": "인덱스란 ?",
+      "preview": "단, 인덱스 또한 생성의 개념이므로 디스크 공간을 차지함 ..."
     }
   ],
   "requestId": "..."
 }
 ```
 
-- `results`는 최대 3개, 없으면 빈 배열
-- `query` 1~200자, 그 외 400 `INVALID_QUERY`
-- 제한 초과 429 `RATE_LIMITED`
+- `results`는 최대 3개(관련 높은 순), 없으면 빈 배열 → 위젯은 "관련 글을 찾지 못했어요"
+- `preview`: 가장 관련 높은 청크에서 뽑은 한 줄(추출식, LLM 아님). LLM 한 줄 요약은 Phase 3
+- `query` 1~200자 문자열, 요청 본문 2KB 이하. 그 외 400 `INVALID_QUERY`
+- IP당 분당 20회. 초과 시 429 `RATE_LIMITED`
+- POST 외 메서드 405 `METHOD_NOT_ALLOWED`, 내부 오류 500 `SEARCH_FAILED`
+- 같은 질문(대소문자/공백 정규화)은 10분 캐시
+
+관리자용 `GET /admin/search-debug?q=` 는 후보(키워드/벡터 점수)와 최종 선택을 보여준다 (임계값 조정용).
+
+## 계획 (Phase 3)
 
 ### `GET /api/v1/posts/:postId/docs`
 
