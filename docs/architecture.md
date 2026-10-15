@@ -41,22 +41,35 @@
 
 Reranker는 결과 품질을 본 뒤 결정한다.
 
-## 데이터 모델 (Phase 1에서 생성 예정)
+## 데이터 모델 (`worker/migrations/0002_posts.sql`)
 
 ```
-posts(id, url UNIQUE, title, summary, tags, category, published_at, updated_at, content_hash)
-post_chunks(id, post_id → posts, heading, text, position)   -- 벡터 id = chunk id
-post_chunks_fts (FTS5: title, heading, text)
-doc_links(id, technology, title, url UNIQUE, description, version)
-post_doc_links(post_id, doc_link_id)   -- 선택: 수동 지정
+posts(id = 티스토리 글 번호, url, title, category, tags JSON, summary, published_at,
+      source_lastmod, status 'indexed'|'skipped', chunk_count, indexed_at)
+post_chunks(id "<postId>-<n>" = Vectorize 벡터 id, post_id, position, heading, text)
+post_chunks_fts  FTS5 trigram (chunk_id, post_id, title, heading, text)   -- 한국어 부분 일치
+doc_links(technology, title, url UNIQUE, description, keywords JSON)
 ```
 
-Phase 0 마이그레이션은 `app_meta`만 만든다.
+Vectorize 인덱스 `tistory-posts`: 1024차원(`@cf/baai/bge-m3`), cosine, metadata `{ postId }`.
 
-## 수집
+## 수집 (Phase 1)
 
-- 티스토리 글: 공개 RSS/사이트맵으로 주기 수집 (Cron Trigger). `content_hash`가 바뀐 글만 재임베딩, 사라진 글은 삭제.
-- 공식 문서: 기술별 링크 목록을 seed 파일로 관리 (React, Next.js, Spring Boot, Django, PostgreSQL, FastAPI 등). 크롤링하지 않는다.
+```
+Cron (*/10분) 또는 POST /admin/ingest
+  → sitemap.xml 에서 글 URL + lastmod
+  → D1의 source_lastmod와 비교 (새 글/수정 글/삭제된 글)
+  → 삭제된 글: Vectorize 벡터 + D1 행 삭제 (사이트맵이 비면 삭제 안 함)
+  → 바뀐 글 최대 3개: 글 페이지 fetch → HTMLRewriter로 제목·카테고리·태그·본문 추출
+      → 소제목(h1~h4) 단위 청크 (≤1000자, 글당 ≤40개)
+      → "제목\n소제목\n본문"을 bge-m3로 임베딩 → Vectorize upsert
+      → D1에 글/청크/FTS 기록 (마지막에 기록하므로 중간 실패 시 다음 실행에서 재시도)
+```
+
+- 무료 플랜 제한(실행당 CPU 10ms, 서브요청 50개) 때문에 한 번에 3개씩. 최초 75개는 약 4시간에 걸쳐 채워진다. `POST /admin/ingest`를 반복 호출하면 더 빨리 채울 수 있다.
+- 본문은 이 저장소 스킨의 `#article-body` 기준. 티스토리가 본문에 끼워 넣는 광고, 공감/공유 버튼, "카테고리의 다른 글"은 제외한다.
+- 보호글처럼 본문이 없는 글은 `skipped`로 남겨 매번 다시 가져오지 않는다.
+- 공식 문서: `worker/seed/doc_links.sql`의 큐레이션 링크(38개, 블로그 카테고리 기준). 크롤링하지 않는다.
 
 ## 남용 방지
 
@@ -70,6 +83,6 @@ Phase 0 마이그레이션은 `app_meta`만 만든다.
 | Phase | 내용 |
 |---|---|
 | 0 | 기반: 스킨 골격, 위젯 골격, Worker 헬스체크, D1, CI ✅ |
-| 1 | 스킨 디자인 완성 + 실제 티스토리 적용 검증, 글 수집/청크/임베딩 |
+| 1 | 스킨 디자인 완성 + 실제 티스토리 적용 ✅, 글 수집/청크/임베딩 + 공식 문서 seed ✅ (2026-10-16 배포, 75개 글 / 296 청크 색인) |
 | 2 | `/api/v1/search` + 결과 카드 UI |
 | 3 | 관련 문서 버튼, 한 줄 미리보기 생성, 남용 방지 |

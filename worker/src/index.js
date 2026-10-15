@@ -1,32 +1,6 @@
-const JSON_HEADERS = { 'content-type': 'application/json; charset=utf-8' };
-
-/**
- * @param {Request} request
- * @param {{ ALLOWED_ORIGINS?: string }} env
- * @returns {Record<string, string>}
- */
-function corsHeaders(request, env) {
-  const origin = request.headers.get('origin');
-  const allowed = (env.ALLOWED_ORIGINS ?? '')
-    .split(',')
-    .map((value) => value.trim())
-    .filter(Boolean);
-  if (!origin || !allowed.includes(origin)) return {};
-  return {
-    'access-control-allow-origin': origin,
-    'access-control-allow-methods': 'GET, POST, OPTIONS',
-    'access-control-allow-headers': 'content-type',
-    vary: 'Origin',
-  };
-}
-
-function json(body, status, headers) {
-  return new Response(JSON.stringify(body), { status, headers: { ...JSON_HEADERS, ...headers } });
-}
-
-function errorBody(code, message, requestId) {
-  return { error: { code, message }, requestId };
-}
+import { handleAdmin } from './admin.js';
+import { corsHeaders, errorBody, json } from './http.js';
+import { runIngest } from './ingest/run.js';
 
 async function checkReady(env, requestId) {
   try {
@@ -47,17 +21,29 @@ export default {
   async fetch(request, env) {
     const requestId = request.headers.get('cf-ray') ?? crypto.randomUUID();
     const headers = { ...corsHeaders(request, env), 'x-request-id': requestId };
-    const { pathname } = new URL(request.url);
+    const url = new URL(request.url);
 
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
 
-    if (request.method === 'GET' && pathname === '/health/live') {
+    if (request.method === 'GET' && url.pathname === '/health/live') {
       return json({ status: 'live', requestId }, 200, headers);
     }
-    if (request.method === 'GET' && pathname === '/health/ready') {
+    if (request.method === 'GET' && url.pathname === '/health/ready') {
       const { status, body } = await checkReady(env, requestId);
       return json(body, status, headers);
     }
+    const admin = await handleAdmin(request, env, url, requestId, headers);
+    if (admin) return admin;
     return json(errorBody('NOT_FOUND', 'Not found', requestId), 404, headers);
+  },
+
+  /** Cron trigger: one incremental sync pass (see docs/architecture.md, 수집). */
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(
+      runIngest(env).then(
+        (report) => console.log(JSON.stringify({ event: 'ingest_run', cron: controller.cron, ...report })),
+        (error) => console.error(JSON.stringify({ event: 'ingest_run_failed', error: String(error) })),
+      ),
+    );
   },
 };

@@ -5,16 +5,22 @@
   "compatibility_date": "2026-09-01",
   "observability": { "enabled": true },
   "vars": {
-    // Comma-separated. Add the blog origin (https://<blog>.tistory.com) before deploying.
-    "ALLOWED_ORIGINS": "http://localhost:5173"
+    // Comma-separated browser origins allowed to call the API.
+    "ALLOWED_ORIGINS": "https://problem-child.tistory.com,http://localhost:5173",
+    "BLOG_ORIGIN": "https://problem-child.tistory.com"
+    // ADMIN_TOKEN is a secret: `npx wrangler secret put ADMIN_TOKEN` (local: worker/.dev.vars).
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "tistory-ai-assistant",
-      // Local dev works with this placeholder; replace with the id from `wrangler d1 create` before deploying.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "0c238f1e-f28a-41a3-9a7c-f5d1372fd2ad",
       "migrations_dir": "migrations"
     }
-  ]
+  ],
+  // Create once: npx wrangler vectorize create tistory-posts --dimensions=1024 --metric=cosine
+  "vectorize": [{ "binding": "VECTORIZE", "index_name": "tistory-posts" }],
+  "ai": { "binding": "AI" },
+  // Incremental sync: each run re-indexes at most 3 changed posts (free-plan CPU/subrequest limits).
+  "triggers": { "crons": ["*/10 * * * *"] }
 }

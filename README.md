@@ -3,7 +3,7 @@
 티스토리 신규 스킨 + 블로그 글을 찾아주는 AI 도우미(RAG).
 서버는 Cloudflare Workers(서버리스)라서 개인 PC나 Docker를 켜둘 필요가 없다.
 
-현재 상태: **Phase 0 (기반)**. 스킨 UI와 위젯 골격, 헬스체크 API만 있고 AI 답변은 아직 없다.
+현재 상태: **Phase 1**. 스킨은 실제 블로그에 적용됨. Worker(`https://tistory-ai-assistant-api.youngs5440.workers.dev`)가 10분마다 바뀐 글을 수집해 임베딩/색인한다. 챗봇 검색 API(Phase 2)는 아직 없다.
 
 ## 구조
 
@@ -34,13 +34,20 @@ npm run check          # lint + test + build
 npm run dev -w skin
 ```
 
-Worker (http://localhost:8787):
+Worker (http://localhost:8787). AI/Vectorize는 Cloudflare 로그인 없이 로컬에서 쓸 수 없으므로 `dev:local`은 둘을 뺀 설정으로 띄운다:
 
 ```bash
 npm run db:migrate:local -w worker
-npm run dev -w worker
-curl -i http://localhost:8787/health/live
+npm run db:seed:local -w worker
+echo "ADMIN_TOKEN=$(openssl rand -hex 24)" > worker/.dev.vars
+npm run dev:local -w worker
 curl -i http://localhost:8787/health/ready
+```
+
+글 하나가 어떻게 추출/청크되는지 확인 (쓰기 없음):
+
+```bash
+curl -H "authorization: Bearer <ADMIN_TOKEN>" "http://localhost:8787/admin/preview?id=123"
 ```
 
 `index.html`은 실제 티스토리 렌더링을 흉내낸 Fixture일 뿐이다. 치환자 렌더링은 실제 블로그에 적용해 확인해야 한다.
@@ -60,12 +67,21 @@ npm run zip -w skin    # skin/dist/tistory-skin.zip
 cd worker
 npx wrangler login
 npx wrangler d1 create tistory-ai-assistant   # 출력된 database_id를 wrangler.jsonc에 넣기
+npx wrangler vectorize create tistory-posts --dimensions=1024 --metric=cosine
 npm run db:migrate:remote
+npm run db:seed:remote
+openssl rand -hex 24 | npx wrangler secret put ADMIN_TOKEN   # 값은 따로 보관
 npm run deploy
 ```
 
+배포하면 Cron이 10분마다 바뀐 글을 3개씩 색인한다. 바로 채우려면:
+
+```bash
+curl -X POST -H "authorization: Bearer <ADMIN_TOKEN>" https://<worker>.workers.dev/admin/ingest
+```
+
 배포 전 `wrangler.jsonc`의 `ALLOWED_ORIGINS`에 블로그 주소(`https://<blog>.tistory.com`)를 추가한다.
-API 키 같은 비밀값은 `npx wrangler secret put <NAME>`으로 넣고 코드나 스킨에 쓰지 않는다.
+비밀값은 `npx wrangler secret put <NAME>`으로 넣고 코드나 스킨에 쓰지 않는다.
 
 ## 문서
 

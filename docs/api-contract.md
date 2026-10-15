@@ -1,6 +1,6 @@
 # API Contract
 
-구현된 것: `GET /health/live`, `GET /health/ready`. 나머지는 **계획**이며 아직 없다.
+구현된 것: `GET /health/live`, `GET /health/ready`, 관리자 API(`/admin/*`). 챗봇 API는 **계획**이며 아직 없다.
 
 ## 공통
 
@@ -19,6 +19,15 @@
 |---|---|---|---|
 | GET | `/health/live` | `{ "status": "live" }` | - |
 | GET | `/health/ready` | `{ "status": "ready" }` (D1 `SELECT 1` 성공) | 503 `NOT_READY` |
+
+### 관리자 API
+
+`Authorization: Bearer <ADMIN_TOKEN>` 필수. 토큰이 없거나 틀리면, 또는 서버에 32자 이상의 `ADMIN_TOKEN`이 설정돼 있지 않으면 존재 자체를 숨기도록 404.
+
+| Method | Path | 200 | 실패 |
+|---|---|---|---|
+| POST | `/admin/ingest` | 수집 1회 실행 결과 `{ indexed, skipped, failed, deleted, remaining }` (글 번호 배열, remaining은 남은 개수) | 500 `ADMIN_FAILED` (사이트맵 실패 등) |
+| GET | `/admin/preview?id=<글번호>` | 쓰기 없이 추출/청크 결과 `{ post, chunks }` | 400 `INVALID_ID`, 500 `ADMIN_FAILED` |
 
 ## 계획 (Phase 2~3)
 

@@ -4,11 +4,14 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
+    "dev:local": "wrangler dev -c wrangler.local.jsonc",
     "deploy": "wrangler deploy",
     "test": "vitest run",
     "verify": "wrangler deploy --dry-run --outdir dist",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
-    "db:migrate:remote": "wrangler d1 migrations apply DB --remote"
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
+    "db:seed:local": "wrangler d1 execute DB --local --file seed/doc_links.sql",
+    "db:seed:remote": "wrangler d1 execute DB --remote --file seed/doc_links.sql"
   },
   "devDependencies": {
     "wrangler": "^4.151.0",

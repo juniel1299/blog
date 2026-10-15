@@ -29,5 +29,7 @@ jobs:
           cmp skin/tistory/skin.html skin/dist/tistory/skin.html
       - name: Worker bundle (dry run)
         run: npm run verify -w worker
-      - name: D1 migrations apply locally
-        run: npm run db:migrate:local -w worker
+      - name: D1 migrations + doc links seed apply locally
+        run: |
+          npm run db:migrate:local -w worker
+          npm run db:seed:local -w worker
