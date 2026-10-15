@@ -1,4 +1,5 @@
 import { handleAdmin } from './admin.js';
+import { handleApi } from './api.js';
 import { corsHeaders, errorBody, json } from './http.js';
 import { runIngest } from './ingest/run.js';
 
@@ -17,8 +18,9 @@ export default {
   /**
    * @param {Request} request
    * @param {{ DB: D1Database, ALLOWED_ORIGINS?: string }} env
+   * @param {ExecutionContext} ctx
    */
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const requestId = request.headers.get('cf-ray') ?? crypto.randomUUID();
     const headers = { ...corsHeaders(request, env), 'x-request-id': requestId };
     const url = new URL(request.url);
@@ -32,6 +34,8 @@ export default {
       const { status, body } = await checkReady(env, requestId);
       return json(body, status, headers);
     }
+    const api = await handleApi(request, env, ctx, url, requestId, headers);
+    if (api) return api;
     const admin = await handleAdmin(request, env, url, requestId, headers);
     if (admin) return admin;
     return json(errorBody('NOT_FOUND', 'Not found', requestId), 404, headers);
