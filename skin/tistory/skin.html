@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>[##_page_title_##]</title>
+  <meta name="description" content="[##_desc_##]">
+  <!-- Carried over from the previous skin: Naver Search Advisor verification + AdSense loader. -->
+  <meta name="naver-site-verification" content="472f043d61170c0efecdc5cb9b4004a35a56b5fb">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4884664384381875" crossorigin="anonymous"></script>
+  <link rel="alternate" type="application/rss+xml" title="[##_title_##]" href="[##_rss_url_##]">
+  <link rel="shortcut icon" href="[##_blog_link_##]favicon.ico">
   <script>
     // Set theme before paint to avoid a light flash in dark mode.
     (function () {
@@ -15,11 +21,13 @@
       document.documentElement.setAttribute('data-theme', t);
     })();
   </script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <link rel="stylesheet" href="./style.css">
 </head>
 <body id="[##_body_id_##]">
 <s_t3>
   <a class="skip-link" href="#main">본문 바로가기</a>
+  <div class="read-progress" data-read-progress aria-hidden="true"></div>
 
   <header class="site-header">
     <div class="container header-inner">
@@ -29,8 +37,8 @@
         <s_search>
           <form class="search" role="search" onsubmit="[##_search_onclick_submit_##]; return false;">
             <label class="sr-only" for="search-input">블로그 검색</label>
-            <input id="search-input" type="search" name="[##_search_name_##]" value="[##_search_text_##]" placeholder="검색">
-            <button type="submit">검색</button>
+            <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="search-input" type="search" name="[##_search_name_##]" value="[##_search_text_##]" placeholder="검색어를 입력하세요">
           </form>
         </s_search>
         <button type="button" class="icon-button" data-theme-toggle aria-label="다크 모드 전환"></button>
@@ -38,28 +46,61 @@
     </div>
   </header>
 
+  <section class="hero" aria-label="블로그 소개">
+    <div class="container hero-inner">
+      <img class="hero-avatar" src="[##_image_##]" alt="" onerror="this.style.display='none'">
+      <div>
+        <p class="hero-eyebrow">DEV LOG</p>
+        <h1 class="hero-title">[##_title_##]</h1>
+        <p class="hero-desc">[##_desc_##]</p>
+      </div>
+    </div>
+  </section>
+
   <div class="container layout">
     <main id="main" class="content">
       <s_list>
         <section class="post-list">
-          <h2 class="list-title">[##_list_conform_##] <span class="list-count">[##_list_count_##]</span></h2>
-          <ul>
+          <header class="list-header">
+            <p class="list-eyebrow">Posts</p>
+            <h2 class="list-title">[##_list_conform_##] <span class="list-count">[##_list_count_##]</span></h2>
+          </header>
+          <ul class="card-grid">
             <s_list_rep>
-              <li class="post-list-item">
-                <a href="[##_list_rep_link_##]">[##_list_rep_title_##]</a>
-                <time>[##_list_rep_regdate_##]</time>
+              <li>
+                <a class="card" href="[##_list_rep_link_##]">
+                  <div class="card-thumb">
+                    <s_list_rep_thumbnail><img src="[##_list_rep_thumbnail_url_##]" alt="" loading="lazy"></s_list_rep_thumbnail>
+                  </div>
+                  <div class="card-body">
+                    <span class="chip">[##_list_rep_category_##]</span>
+                    <h3 class="card-title">[##_list_rep_title_text_##]</h3>
+                    <p class="card-summary">[##_list_rep_summary_##]</p>
+                    <p class="card-meta"><time>[##_list_rep_regdate_##]</time><span class="card-comments">[##_list_rep_rp_cnt_##]</span></p>
+                  </div>
+                </a>
               </li>
             </s_list_rep>
           </ul>
+          <s_list_empty><p class="empty">아직 글이 없어요.</p></s_list_empty>
         </section>
       </s_list>
 
       <s_article_rep>
         <s_index_article_rep>
-          <article class="post-card">
-            <h2><a href="[##_article_rep_link_##]">[##_article_rep_title_##]</a></h2>
-            <p class="post-summary">[##_article_rep_summary_##]</p>
-            <time class="post-date">[##_article_rep_date_##]</time>
+          <article class="card card-row">
+            <a class="card-thumb" href="[##_article_rep_link_##]" tabindex="-1" aria-hidden="true">
+              <s_article_rep_thumbnail><img src="[##_article_rep_thumbnail_url_##]" alt="" loading="lazy"></s_article_rep_thumbnail>
+            </a>
+            <div class="card-body">
+              <a class="chip" href="[##_article_rep_category_link_##]">[##_article_rep_category_##]</a>
+              <h2 class="card-title"><a href="[##_article_rep_link_##]">[##_article_rep_title_##]</a></h2>
+              <p class="card-summary">[##_article_rep_summary_##]</p>
+              <p class="card-meta">
+                <time>[##_article_rep_simple_date_##]</time>
+                <s_rp_count><span>댓글 [##_article_rep_rp_cnt_##]</span></s_rp_count>
+              </p>
+            </div>
           </article>
         </s_index_article_rep>
 
@@ -67,14 +108,127 @@
           <div class="post-layout">
             <article class="post">
               <header class="post-header">
-                <p class="post-category">[##_article_rep_category_##]</p>
+                <a class="chip" href="[##_article_rep_category_link_##]">[##_article_rep_category_##]</a>
                 <h1 class="post-title">[##_article_rep_title_##]</h1>
-                <time class="post-date">[##_article_rep_date_##]</time>
+                <p class="post-meta">
+                  <time>[##_article_rep_date_##]</time>
+                  <s_ad_div>
+                    <span class="admin-links">
+                      <a href="[##_s_ad_m_link_##]">수정</a>
+                      <a href="#" onclick="[##_s_ad_d_onclick_##]; return false;">삭제</a>
+                    </span>
+                  </s_ad_div>
+                </p>
               </header>
+
               <div class="post-body" id="article-body">[##_article_rep_desc_##]</div>
+
+              <s_tag_label>
+                <div class="post-tags" aria-label="태그">[##_tag_label_rep_##]</div>
+              </s_tag_label>
+
+              <nav class="post-nav" aria-label="이전 글, 다음 글">
+                <s_article_prev>
+                  <a class="post-nav-item prev" href="[##_article_prev_link_##]">
+                    <span class="post-nav-label">← 이전 글</span>
+                    <span class="post-nav-title">[##_article_prev_title_##]</span>
+                  </a>
+                </s_article_prev>
+                <s_article_next>
+                  <a class="post-nav-item next" href="[##_article_next_link_##]">
+                    <span class="post-nav-label">다음 글 →</span>
+                    <span class="post-nav-title">[##_article_next_title_##]</span>
+                  </a>
+                </s_article_next>
+              </nav>
+
+              <s_article_related>
+                <section class="related">
+                  <h2 class="section-title">'[##_article_rep_category_##]' 카테고리의 다른 글</h2>
+                  <ul class="related-list">
+                    <s_article_related_rep>
+                      <li>
+                        <a href="[##_article_related_rep_link_##]">
+                          <span class="related-title">[##_article_related_rep_title_##]</span>
+                          <time>[##_article_related_rep_date_##]</time>
+                        </a>
+                      </li>
+                    </s_article_related_rep>
+                  </ul>
+                </section>
+              </s_article_related>
+
+              <s_rp>
+                <section class="comments" aria-label="댓글">
+                  [##_comment_group_##]
+                  <!-- Tistory only renders comment_group when these legacy blocks exist; CSS hides them once the new comment app mounts. -->
+                  <div class="comment-legacy">
+                    <h2 class="section-title">댓글</h2>
+                    <s_rp_container>
+                      <ol class="comment-list">
+                        <s_rp_rep>
+                          <li id="[##_rp_rep_id_##]" class="comment [##_rp_rep_class_##]">
+                            <div class="comment-head">
+                              <img class="comment-avatar" src="[##_rp_rep_logo_##]" alt="" onerror="this.style.display='none'">
+                              <strong class="comment-name">[##_rp_rep_name_##]</strong>
+                              <a class="comment-date" href="[##_rp_rep_link_##]">[##_rp_rep_date_##]</a>
+                              <span class="comment-actions">
+                                <a href="#" onclick="[##_rp_rep_onclick_delete_##]; return false;">수정/삭제</a>
+                                <a href="#" onclick="[##_rp_rep_onclick_reply_##]; return false;">답글</a>
+                              </span>
+                            </div>
+                            <div class="comment-body">[##_rp_rep_desc_##]</div>
+                            <s_rp2_container>
+                              <ol class="comment-replies">
+                                <s_rp2_rep>
+                                  <li id="[##_rp_rep_id_##]" class="comment [##_rp_rep_class_##]">
+                                    <div class="comment-head">
+                                      <img class="comment-avatar" src="[##_rp_rep_logo_##]" alt="" onerror="this.style.display='none'">
+                                      <strong class="comment-name">[##_rp_rep_name_##]</strong>
+                                      <a class="comment-date" href="[##_rp_rep_link_##]">[##_rp_rep_date_##]</a>
+                                      <span class="comment-actions">
+                                        <a href="#" onclick="[##_rp_rep_onclick_delete_##]; return false;">수정/삭제</a>
+                                      </span>
+                                    </div>
+                                    <div class="comment-body">[##_rp_rep_desc_##]</div>
+                                  </li>
+                                </s_rp2_rep>
+                              </ol>
+                            </s_rp2_container>
+                          </li>
+                        </s_rp_rep>
+                      </ol>
+                    </s_rp_container>
+                    <s_rp_input_form>
+                      <div class="comment-form">
+                        <s_rp_member>
+                          <s_rp_guest>
+                            <div class="comment-guest">
+                              <label class="sr-only" for="rp-name">이름</label>
+                              <input id="rp-name" type="text" name="[##_rp_input_name_##]" value="[##_guest_name_##]" placeholder="이름">
+                              <label class="sr-only" for="rp-password">비밀번호</label>
+                              <input id="rp-password" type="password" maxlength="8" name="[##_rp_input_password_##]" placeholder="비밀번호">
+                              <label class="sr-only" for="rp-homepage">홈페이지</label>
+                              <input id="rp-homepage" type="text" name="[##_rp_input_homepage_##]" value="[##_guest_homepage_##]" placeholder="홈페이지 (선택)">
+                            </div>
+                          </s_rp_guest>
+                          <label class="comment-secret"><input type="checkbox" name="[##_rp_input_is_secret_##]"> 비밀글</label>
+                        </s_rp_member>
+                        <label class="sr-only" for="rp-comment">댓글</label>
+                        <textarea id="rp-comment" name="[##_rp_input_comment_##]" rows="4" placeholder="댓글을 남겨주세요"></textarea>
+                        <div class="comment-submit">
+                          <input type="submit" value="댓글 달기" onclick="[##_rp_onclick_submit_##]">
+                        </div>
+                      </div>
+                    </s_rp_input_form>
+                  </div>
+                </section>
+              </s_rp>
             </article>
+
             <aside class="toc" data-toc aria-label="목차">
               <button type="button" class="toc-toggle" data-toc-toggle aria-expanded="false">목차</button>
+              <p class="toc-heading">On this page</p>
               <ol class="toc-list"></ol>
             </aside>
           </div>
@@ -83,9 +237,9 @@
 
       <s_paging>
         <nav class="paging" aria-label="페이지">
-          <a [##_prev_page_##] class="[##_no_more_prev_##]">이전</a>
+          <a [##_prev_page_##] class="paging-arrow [##_no_more_prev_##]" aria-label="이전 페이지">‹</a>
           <s_paging_rep><a [##_paging_rep_link_##] class="num">[##_paging_rep_link_num_##]</a></s_paging_rep>
-          <a [##_next_page_##] class="[##_no_more_next_##]">다음</a>
+          <a [##_next_page_##] class="paging-arrow [##_no_more_next_##]" aria-label="다음 페이지">›</a>
         </nav>
       </s_paging>
     </main>
@@ -93,10 +247,37 @@
     <aside class="sidebar" aria-label="사이드바">
       <s_sidebar>
         <s_sidebar_element>
+          <!-- 프로필 -->
+          <section class="widget profile">
+            <img class="profile-avatar" src="[##_image_##]" alt="" onerror="this.style.display='none'">
+            <p class="profile-name">[##_blogger_##]</p>
+            <p class="profile-desc">[##_desc_##]</p>
+          </section>
+        </s_sidebar_element>
+        <s_sidebar_element>
           <!-- 카테고리 -->
-          <section class="sidebar-section">
-            <h2>카테고리</h2>
-            [##_category_list_##]
+          <section class="widget">
+            <h2 class="widget-title">카테고리</h2>
+            <div class="category">[##_category_list_##]</div>
+          </section>
+        </s_sidebar_element>
+        <s_sidebar_element>
+          <!-- 인기 글 -->
+          <section class="widget">
+            <h2 class="widget-title">인기 글</h2>
+            <ol class="popular">
+              <s_rctps_popular_rep>
+                <li><a href="[##_rctps_rep_link_##]">[##_rctps_rep_title_##]</a></li>
+              </s_rctps_popular_rep>
+            </ol>
+          </section>
+        </s_sidebar_element>
+        <s_sidebar_element>
+          <!-- 방문자수 -->
+          <section class="widget counter">
+            <div><span class="counter-label">Today</span><strong>[##_count_today_##]</strong></div>
+            <div><span class="counter-label">Yesterday</span><strong>[##_count_yesterday_##]</strong></div>
+            <div><span class="counter-label">Total</span><strong>[##_count_total_##]</strong></div>
           </section>
         </s_sidebar_element>
       </s_sidebar>
@@ -104,7 +285,10 @@
   </div>
 
   <footer class="site-footer">
-    <div class="container">© [##_title_##]</div>
+    <div class="container footer-inner">
+      <span>© [##_title_##]</span>
+      <a href="[##_rss_url_##]">RSS</a>
+    </div>
   </footer>
 
   <button type="button" class="top-button" data-top-button aria-label="맨 위로" hidden>↑</button>

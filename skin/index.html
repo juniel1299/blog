@@ -1,61 +1,113 @@
 <!doctype html>
-<!-- Local fixture for `npm run dev`. Mimics a rendered permalink page; it is NOT the Tistory template
-     (see tistory/skin.html) and does not replace testing on a real Tistory blog. -->
+<!-- Local fixture for `npm run dev`: home page. Mimics rendered Tistory output; it is NOT the
+     template (see tistory/skin.html) and does not replace testing on a real Tistory blog.
+     Post page fixture: /post.html -->
 <html lang="ko" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Fixture · Tistory AI Assistant</title>
+  <title>Fixture · Home</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 </head>
-<body>
+<body id="tt-body-index">
   <header class="site-header">
     <div class="container header-inner">
-      <a class="site-title" href="#">개발 블로그</a>
-      <nav class="site-nav" aria-label="메뉴"><ul><li><a href="#">홈</a></li><li><a href="#">태그</a></li></ul></nav>
+      <a class="site-title" href="/">주니엘의 개발일지</a>
+      <nav class="site-nav" aria-label="메뉴"><ul><li><a href="/">홈</a></li><li><a href="#">태그</a></li><li><a href="#">방명록</a></li></ul></nav>
       <div class="header-actions">
         <form class="search" role="search" onsubmit="return false;">
           <label class="sr-only" for="search-input">블로그 검색</label>
-          <input id="search-input" type="search" placeholder="검색">
-          <button type="submit">검색</button>
+          <svg class="search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="search-input" type="search" placeholder="검색어를 입력하세요">
         </form>
         <button type="button" class="icon-button" data-theme-toggle aria-label="다크 모드 전환"></button>
       </div>
     </div>
   </header>
 
+  <section class="hero" aria-label="블로그 소개">
+    <div class="container hero-inner">
+      <img class="hero-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Crect width='96' height='96' fill='%234f46e5'/%3E%3Ctext x='48' y='60' font-size='40' text-anchor='middle' fill='white'%3EJ%3C/text%3E%3C/svg%3E" alt="">
+      <div>
+        <p class="hero-eyebrow">DEV LOG</p>
+        <h1 class="hero-title">주니엘의 개발일지</h1>
+        <p class="hero-desc">Java, Spring, SQL, React를 공부하며 남기는 기록</p>
+      </div>
+    </div>
+  </section>
+
   <div class="container layout">
     <main id="main" class="content">
-      <div class="post-layout">
-        <article class="post">
-          <header class="post-header">
-            <p class="post-category">Database</p>
-            <h1 class="post-title">PostgreSQL 인덱스와 EXPLAIN 이해하기</h1>
-            <time class="post-date">2026.10.16</time>
-          </header>
-          <div class="post-body" id="article-body">
-            <h2>인덱스란</h2>
-            <p>Lorem ipsum dolor sit amet. </p><p style="height:600px">긴 본문 자리</p>
-            <h3>B-tree</h3>
-            <p style="height:600px">B-tree 설명</p>
-            <h3>GIN</h3>
-            <p style="height:600px">GIN 설명</p>
-            <h2>EXPLAIN 읽기</h2>
-            <pre><code>EXPLAIN ANALYZE SELECT * FROM posts WHERE id = 1;</code></pre>
-            <p style="height:800px">실행 계획 설명</p>
-          </div>
-        </article>
-        <aside class="toc" data-toc aria-label="목차">
-          <button type="button" class="toc-toggle" data-toc-toggle aria-expanded="false">목차</button>
-          <ol class="toc-list"></ol>
-        </aside>
-      </div>
+      <article class="card card-row">
+        <a class="card-thumb" href="/post.html" tabindex="-1" aria-hidden="true"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 100'%3E%3Cdefs%3E%3ClinearGradient id='g'%3E%3Cstop stop-color='%2306b6d4'/%3E%3Cstop offset='1' stop-color='%234f46e5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='160' height='100' fill='url(%23g)'/%3E%3C/svg%3E" alt=""></a>
+        <div class="card-body">
+          <a class="chip" href="#">React</a>
+          <h2 class="card-title"><a href="/post.html">[React] 화면에 뿌릴 때 map은 되는데 forEach는 안 되는 이유</a></h2>
+          <p class="card-summary">forEach 는 반환이 없는 반면 map 은 새로운 배열을 반환함. 선언형 프레임워크의 경우 실제 html 을 내가 작성하여 변수 선언을 함. 기존 자바스크립트의 경우 명령형으로 메서드를 통해 html 을 그려서 만듬.</p>
+          <p class="card-meta"><time>2025. 10. 8.</time><span>댓글 0</span></p>
+        </div>
+      </article>
+      <article class="card card-row">
+        <a class="card-thumb" href="/post.html" tabindex="-1" aria-hidden="true"></a>
+        <div class="card-body">
+          <a class="chip" href="#">SQL(oracle)</a>
+          <h2 class="card-title"><a href="/post.html">[Oracle SQL] Index 란? (ft. 뭐든 과하면 독이다)</a></h2>
+          <p class="card-summary">인덱스란? 데이터를 빠르게 찾기 위한 도구. 오라클에서 자동 생성 또는 개발자가 직접 생성. 단, 인덱스 또한 생성의 개념이므로 디스크 공간을 차지함.</p>
+          <p class="card-meta"><time>2025. 10. 6.</time><span>댓글 0</span></p>
+        </div>
+      </article>
+      <article class="card card-row">
+        <a class="card-thumb" href="/post.html" tabindex="-1" aria-hidden="true"></a>
+        <div class="card-body">
+          <a class="chip" href="#">나의 코딩 관련 이야기</a>
+          <h2 class="card-title"><a href="/post.html">개발자 국비지원교육은 도움이 되는가? (들은 사람의 의견)</a></h2>
+          <p class="card-summary">it국비지원교육 이전의 나. 나는 공대는 나왔지만, 전기공학과를 졸업했다. 그 중에서도 반도체와 임베디드 과목들을 주로 수강을 했었다.</p>
+          <p class="card-meta"><time>2025. 9. 30.</time><span>댓글 2</span></p>
+        </div>
+      </article>
+      <nav class="paging" aria-label="페이지">
+        <a class="paging-arrow no-more-prev" aria-label="이전 페이지">‹</a>
+        <a class="num" href="#"><span class="selected">1</span></a><a class="num" href="#">2</a><a class="num" href="#">3</a>
+        <a class="paging-arrow" href="#" aria-label="다음 페이지">›</a>
+      </nav>
     </main>
+
     <aside class="sidebar" aria-label="사이드바">
-      <section class="sidebar-section"><h2>카테고리</h2><ul><li><a href="#">Database</a></li><li><a href="#">React</a></li></ul></section>
+      <section class="widget profile">
+        <p class="profile-name">주니엘</p>
+        <p class="profile-desc">Java, Spring, SQL, React를 공부하며 남기는 기록</p>
+      </section>
+      <section class="widget">
+        <h2 class="widget-title">카테고리</h2>
+        <div class="category">
+          <ul class="tt_category"><li><a class="link_tit" href="#">분류 전체보기 <span class="c_cnt">(75)</span></a>
+            <ul class="category_list">
+              <li><a class="link_item" href="#">java <span class="c_cnt">(25)</span></a>
+                <ul class="sub_category_list"><li><a class="link_sub_item" href="#">Spring <span class="c_cnt">(1)</span></a></li></ul></li>
+              <li><a class="link_item" href="#">SQL(oracle) <span class="c_cnt">(14)</span></a></li>
+              <li><a class="link_item" href="#">JavaScript <span class="c_cnt">(17)</span></a>
+                <ul class="sub_category_list"><li><a class="link_sub_item" href="#">React <span class="c_cnt">(14)</span></a></li></ul></li>
+              <li><a class="link_item" href="#">CS + WEB <span class="c_cnt">(9)</span></a></li>
+            </ul></li></ul>
+        </div>
+      </section>
+      <section class="widget">
+        <h2 class="widget-title">인기 글</h2>
+        <ol class="popular">
+          <li><a href="#">[Oracle SQL] Index 란?</a></li>
+          <li><a href="#">[React] map vs forEach</a></li>
+          <li><a href="#">개발자 국비지원교육은 도움이 되는가?</a></li>
+        </ol>
+      </section>
+      <section class="widget counter">
+        <div><span class="counter-label">Today</span><strong>12</strong></div>
+        <div><span class="counter-label">Yesterday</span><strong>34</strong></div>
+        <div><span class="counter-label">Total</span><strong>5,678</strong></div>
+      </section>
     </aside>
   </div>
 
-  <footer class="site-footer"><div class="container">© 개발 블로그</div></footer>
+  <footer class="site-footer"><div class="container footer-inner"><span>© 주니엘의 개발일지</span><a href="#">RSS</a></div></footer>
   <button type="button" class="top-button" data-top-button aria-label="맨 위로" hidden>↑</button>
   <div id="ai-assistant" data-api-base=""></div>
   <script type="module" src="/src/main.js"></script>
