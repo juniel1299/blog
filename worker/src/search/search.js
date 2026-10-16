@@ -1,9 +1,13 @@
 import { EMBEDDING_MODEL } from '../ingest/run.js';
+import { recentPosts } from '../posts.js';
+import { categoryMatches } from './intent.js';
 import { makeSnippet, parseQuery } from './query.js';
-import { fuseRankings, selectRankings } from './rank.js';
+import { fuseRankings, postIdOf, selectRankings } from './rank.js';
 
-export const RESULT_LIMIT = 3;
+export const RESULT_LIMIT = 3; // shown per page; also what /admin/search-debug picks
+export const RESULT_POOL = 6; // computed once, served 3 at a time ("더 보기")
 const CANDIDATES = 20;
+const CATEGORY_CANDIDATES = 50; // wider net so a category filter still has enough to keep
 // Calibrated on the live index (2026-10-16): on-topic queries score 0.55-0.77, off-topic ones (weather,
 // recipes, stocks) at most 0.48. At 0.4, "오늘 날씨" still pulled in a Calendar post through the body
 // word "오늘", so body-only keyword hits use the same floor (they re-rank, never add). See docs/architecture.md, 검색.
@@ -47,15 +51,27 @@ async function keywordCandidates(env, { ftsQuery, likeTerms }) {
   return { strong: [...new Set([...ftsStrong, ...likeStrong])], body: [...new Set([...ftsBody, ...likeBody])] };
 }
 
-async function vectorMatches(env, text) {
+async function vectorMatches(env, text, topK = CANDIDATES) {
   const { data } = await env.AI.run(EMBEDDING_MODEL, { text: [text] });
-  const { matches } = await env.VECTORIZE.query(data[0], { topK: CANDIDATES });
+  const { matches } = await env.VECTORIZE.query(data[0], { topK });
   return matches.map(({ id, score }) => ({ id, score }));
 }
 
-async function candidates(env, parsed) {
-  const [keyword, vector] = await Promise.all([keywordCandidates(env, parsed), vectorMatches(env, parsed.text)]);
+async function candidates(env, parsed, topK) {
+  const [keyword, vector] = await Promise.all([keywordCandidates(env, parsed), vectorMatches(env, parsed.text, topK)]);
   return { ...keyword, vector };
+}
+
+/** Drops candidates whose post is outside `category` (whole category-path segment match). */
+async function restrictToCategory(env, found, category) {
+  const ids = [...new Set([...found.strong, ...found.body, ...found.vector.map((m) => m.id)].map(postIdOf))];
+  if (ids.length === 0) return found;
+  const { results } = await env.DB.prepare(`SELECT id, category FROM posts WHERE id IN (${ids.map(() => '?').join(', ')})`)
+    .bind(...ids)
+    .all();
+  const allowed = new Set(results.filter((row) => categoryMatches(row.category, category)).map((row) => row.id));
+  const keep = (chunkId) => allowed.has(postIdOf(chunkId));
+  return { strong: found.strong.filter(keep), body: found.body.filter(keep), vector: found.vector.filter((m) => keep(m.id)) };
 }
 
 const FLOORS = { strictFloor: MIN_VECTOR_SCORE, looseFloor: LOOSE_VECTOR_SCORE };
@@ -73,12 +89,18 @@ export async function debugRankings(env, raw) {
 }
 
 /**
- * Hybrid search over indexed posts. Returns at most RESULT_LIMIT posts, best first, each with a one-line preview.
- * @param {string} raw user query (already length-validated)
+ * Hybrid search over indexed posts. Returns up to RESULT_POOL posts, best first, each with a one-line
+ * preview. With a category, only posts in it count; a category with no other words lists its newest posts.
+ * @param {string} raw user query (already length-validated, category phrase already removed)
+ * @param {{ category?: string | null }} [options]
  */
-export async function searchPosts(env, raw) {
+export async function searchPosts(env, raw, { category = null } = {}) {
   const parsed = parseQuery(raw);
-  const top = fuseRankings(selectRankings(await candidates(env, parsed), FLOORS), RESULT_LIMIT);
+  if (category && parsed.empty) return recentPosts(env, { limit: RESULT_POOL, category });
+
+  let found = await candidates(env, parsed, category ? CATEGORY_CANDIDATES : CANDIDATES);
+  if (category) found = await restrictToCategory(env, found, category);
+  const top = fuseRankings(selectRankings(found, FLOORS), RESULT_POOL);
   if (top.length === 0) return [];
 
   const { results } = await env.DB.prepare(

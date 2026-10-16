@@ -30,6 +30,15 @@
 
 근거가 없으면 "관련 글을 찾지 못했어요". 링크는 저장된 URL만 사용하고 LLM이 만든 URL은 쓰지 않는다.
 
+## 챗봇 대화 기능 (`worker/src/search/intent.js`, `worker/src/posts.js`)
+
+- 열면: 글 본문 페이지면 "지금 읽는 글과 비슷한 글", 아니면 "최근 글" 3개 + 예시 질문 버튼
+- 더 보기: 검색은 6개까지 계산해 10분 캐시, 3개씩 (`offset`)
+- 카테고리 범위: "리액트 카테고리에서 상태관리" → 카테고리 경로 단계(`JavaScript/React` → javascript, react)와 정확히 일치하는 글만
+- 최근 글: "최근 글 보여줘"
+- 비슷한 글: 글의 청크 벡터 평균 → Vectorize. 임계값 0.55는 실제 글 8개로 맞췄다 (2026-10-16, `/admin/similar-debug`):
+  같은 시리즈/주제 0.62~0.83 (useEffect→useRef 0.83, for문→while문 0.81), 상위 3개 안의 약한 연결 0.55~0.6
+
 ## 검색 (Phase 2, `worker/src/search/`)
 
 ```

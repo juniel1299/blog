@@ -39,14 +39,17 @@ function aliasOf(word) {
 /**
  * Turns a chat-style request into search inputs.
  * @param {string} raw user input
- * @returns {{ text: string, terms: string[], ftsQuery: string | null, likeTerms: string[] }}
+ * @returns {{ text: string, terms: string[], ftsQuery: string | null, likeTerms: string[], empty: boolean }}
  *   text: cleaned query for embedding; ftsQuery: FTS5 MATCH expression (3+ char terms);
- *   likeTerms: shorter terms (e.g. "조인") that trigram cannot match, searched with LIKE.
+ *   likeTerms: shorter terms (e.g. "조인") that trigram cannot match, searched with LIKE;
+ *   empty: nothing but request phrasing ("글 보여줘"), e.g. after a category was taken out.
  */
 export function parseQuery(raw) {
   let text = raw.normalize('NFC').replace(/\s+/g, ' ').trim();
   for (const pattern of REQUEST_SUFFIXES) text = text.replace(pattern, ' ');
-  text = text.replace(/\s+/g, ' ').trim() || raw.trim();
+  text = text.replace(/\s+/g, ' ').trim();
+  const empty = text === '';
+  text ||= raw.trim();
 
   const terms = [
     ...new Set(
@@ -65,6 +68,7 @@ export function parseQuery(raw) {
     // Quoted phrases so FTS5 operators/punctuation in user input are treated as plain text.
     ftsQuery: ftsTerms.length > 0 ? ftsTerms.map((term) => `"${term.replace(/"/g, '')}"`).join(' OR ') : null,
     likeTerms: terms.filter((term) => term.length < TRIGRAM_MIN),
+    empty,
   };
 }
 
