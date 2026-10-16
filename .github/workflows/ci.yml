@@ -45,8 +45,8 @@ jobs:
       group: deploy-worker
       cancel-in-progress: false
     env:
-      CLOUDFLARE_API_TOKEN: 98df7d0f7e88e4a6e82016d9329379b7
-      CLOUDFLARE_ACCOUNT_ID: ed98bf344bc07f64918488bbccf06253
+      CLOUDFLARE_API_TOKEN: ${{ secrets.BLOG }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.FLARE }}
       WORKER_URL: https://tistory-ai-assistant-api.youngs5440.workers.dev
     steps:
       - uses: actions/checkout@v4
