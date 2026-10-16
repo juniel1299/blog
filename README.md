@@ -3,7 +3,7 @@
 티스토리 신규 스킨 + 블로그 글을 찾아주는 AI 도우미(RAG).
 서버는 Cloudflare Workers(서버리스)라서 개인 PC나 Docker를 켜둘 필요가 없다.
 
-현재 상태: **Phase 3**. 스킨은 실제 블로그에 적용됨. Worker(`https://tistory-ai-assistant-api.youngs5440.workers.dev`)가 10분마다 바뀐 글을 수집해 색인하고, 챗봇이 `POST /api/v1/search`로 관련 글 카드(한 줄 미리보기 + 새 탭 링크)를 보여준다. 카드의 [관련 문서] 버튼을 누르면 큐레이션한 공식 문서 링크를 이어서 보여준다.
+현재 상태: 운영 중. 스킨이 실제 블로그에 적용돼 있고, Worker(`https://tistory-ai-assistant-api.youngs5440.workers.dev`)가 10분마다 바뀐 글을 색인한다. 챗봇은 글 검색(한 줄 미리보기 + 새 탭 링크), [관련 문서], [더 보기], 카테고리 범위 검색, 최근 글, 지금 읽는 글과 비슷한 글을 제공한다. 자세한 상태는 [docs/requirements.md](docs/requirements.md).
 
 ## 구조
 
@@ -114,5 +114,4 @@ npm run eval:search -w worker        # 배포된 Worker 대상, worker/.dev.vars
 
 ## 문서
 
-- [docs/architecture.md](docs/architecture.md): 구조, RAG 흐름, 데이터 모델, Phase 계획
-- [docs/api-contract.md](docs/api-contract.md): 챗봇 API 계약 (Phase 2 구현 예정)
+[docs/README.md](docs/README.md)에서 시작한다: 요구사항·현재 상태, 아키텍처, RAG 설계, 데이터 모델, API, 스킨, 운영, 보안, 개발 이력, 결정 기록(ADR).
