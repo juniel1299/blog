@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { ChatWidget } from '../src/widget/ChatWidget.jsx';
-import { SearchError, isSafeUrl, searchBlog } from '../src/widget/api.js';
+import { SearchError, fetchDocs, isSafeUrl, searchBlog } from '../src/widget/api.js';
 import { mountWidget } from '../src/widget/mount.jsx';
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
@@ -91,6 +91,49 @@ describe('ChatWidget', () => {
     expect(search).toHaveBeenCalledTimes(2);
   });
 
+  test('"관련 문서" adds official doc links for that post, once', async () => {
+    const docs = vi.fn(async () => [
+      { technology: 'react', title: '리스트 렌더링', url: 'https://ko.react.dev/learn/rendering-lists', description: 'map과 key' },
+    ]);
+    render(
+      <ChatWidget
+        apiBase={API}
+        search={async () => [{ postId: 123, title: 'map vs forEach', url: 'https://blog/123', category: 'React', preview: 'p' }]}
+        docs={docs}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'AI 도우미 열기' }));
+    await ask('map 글');
+
+    const button = screen.getByRole('button', { name: "'map vs forEach' 관련 공식 문서 보기" });
+    await act(async () => {
+      fireEvent.click(button);
+    });
+
+    expect(docs).toHaveBeenCalledWith(API, 123);
+    expect(screen.getByText("'map vs forEach' 관련 공식 문서예요.")).toBeTruthy();
+    const link = screen.getByRole('link', { name: /리스트 렌더링/ });
+    expect(link.getAttribute('href')).toBe('https://ko.react.dev/learn/rendering-lists');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(button.disabled).toBe(true);
+  });
+
+  test('a post without linked docs says so', async () => {
+    render(
+      <ChatWidget
+        apiBase={API}
+        search={async () => [{ postId: 106, title: '입사 일기', url: 'https://blog/106', category: null, preview: 'p' }]}
+        docs={async () => []}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'AI 도우미 열기' }));
+    await ask('입사');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: "'입사 일기' 관련 공식 문서 보기" }));
+    });
+    expect(screen.getByText('이 글과 연결된 공식 문서가 아직 없어요.')).toBeTruthy();
+  });
+
   test('blank input is not sent', async () => {
     const search = vi.fn();
     openWith(search);
@@ -129,6 +172,18 @@ describe('searchBlog', () => {
       throw new TypeError('Failed to fetch');
     });
     await expect(searchBlog(API, 'q', { fetchImpl })).rejects.toMatchObject({ kind: 'network' });
+  });
+
+  test('fetchDocs GETs the post docs and drops unsafe links', async () => {
+    const fetchImpl = respond(200, {
+      docs: [
+        { title: 'CORS', url: 'https://developer.mozilla.org/x' },
+        { title: 'bad', url: 'javascript:void 0' },
+      ],
+    });
+    const docs = await fetchDocs(API, 101, { fetchImpl });
+    expect(docs.map((d) => d.title)).toEqual(['CORS']);
+    expect(fetchImpl.mock.calls[0][0]).toBe(`${API}/api/v1/posts/101/docs`);
   });
 
   test('isSafeUrl only allows http(s)', () => {

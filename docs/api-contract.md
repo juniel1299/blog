@@ -1,6 +1,6 @@
 # API Contract
 
-구현된 것: `GET /health/live`, `GET /health/ready`, `POST /api/v1/search`, 관리자 API(`/admin/*`). `GET /api/v1/posts/:postId/docs`는 **계획**(Phase 3).
+구현된 것: `GET /health/live`, `GET /health/ready`, `POST /api/v1/search`, `GET /api/v1/posts/:postId/docs`, 관리자 API(`/admin/*`).
 
 ## 공통
 
@@ -61,20 +61,23 @@
 
 관리자용 `GET /admin/search-debug?q=` 는 후보(키워드/벡터 점수)와 최종 선택을 보여준다 (임계값 조정용).
 
-## 계획 (Phase 3)
-
 ### `GET /api/v1/posts/:postId/docs`
 
 ```json
+// GET /api/v1/posts/123/docs -> 200
 {
+  "postId": 123,
   "docs": [
-    { "technology": "PostgreSQL", "title": "Indexes", "url": "https://www.postgresql.org/docs/current/indexes.html", "description": "인덱스 종류와 사용 조건" }
+    { "technology": "react", "title": "리스트 렌더링", "url": "https://ko.react.dev/learn/rendering-lists", "description": "map으로 목록 렌더링과 key" }
   ],
   "requestId": "..."
 }
 ```
 
-- 링크는 D1 `doc_links`에 저장된 것만 반환
-- 없는 글 404 `POST_NOT_FOUND`
+- 링크는 D1 `doc_links`(큐레이션 seed)에 저장된 것만 반환. LLM이 만든 링크는 없다
+- 글의 태그(가중치 3) / 카테고리(2) / 제목 단어(1)와 문서 keywords를 비교하고, 여러 문서에 흔한 키워드는 덜 치도록 IDF로 가중해 상위 3개
+- 맞는 문서가 없으면 `docs: []` → 위젯은 "이 글과 연결된 공식 문서가 아직 없어요"
+- 색인되지 않은 글 404 `POST_NOT_FOUND`, GET 외 405, 내부 오류 500 `DOCS_FAILED`
+- 검색과 같은 IP 제한(분당 20회), `cache-control: public, max-age=600`
 
 스트리밍(SSE)은 응답이 짧은 카드 형식이라 필요해지면 그때 추가한다.
