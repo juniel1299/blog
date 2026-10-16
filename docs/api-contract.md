@@ -60,6 +60,8 @@
 - 같은 질문(대소문자/공백 정규화)은 10분 캐시
 
 관리자용 `GET /admin/search-debug?q=` 는 후보(키워드/벡터 점수)와 최종 선택을 보여준다 (임계값 조정용).
+결과가 0건인 질문은 `search_misses`에 **정규화한 질문 텍스트만** 기록한다 (IP·식별자 없음, 90일 후 cron이 삭제).
+관리자용 `GET /admin/misses?days=30` (1~90) → `{ days, misses: [{ query, count, last_seen }] }` 상위 50개.
 
 ### `GET /api/v1/posts/:postId/docs`
 

@@ -11,7 +11,8 @@
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "db:seed:local": "wrangler d1 execute DB --local --file seed/doc_links.sql",
-    "db:seed:remote": "wrangler d1 execute DB --remote --file seed/doc_links.sql"
+    "db:seed:remote": "wrangler d1 execute DB --remote --file seed/doc_links.sql",
+    "eval:search": "node eval/run.js"
   },
   "devDependencies": {
     "wrangler": "^4.151.0",
