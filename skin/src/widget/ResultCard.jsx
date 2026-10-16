@@ -1,8 +1,10 @@
 /**
- * One search hit: one-line preview, then the post title opening in a new tab.
- * @param {{ result: { title: string, url: string, category: string | null, preview: string } }} props
+ * One search hit: one-line preview, the post title opening in a new tab, and a button that asks
+ * the assistant for related official docs.
+ * @param {{ result: { title: string, url: string, category: string | null, preview: string },
+ *   onShowDocs?: () => void, docsRequested?: boolean }} props
  */
-export function ResultCard({ result }) {
+export function ResultCard({ result, onShowDocs, docsRequested = false }) {
   return (
     <li className="aia-card">
       {result.category && <span className="aia-card-chip">{result.category}</span>}
@@ -12,6 +14,17 @@ export function ResultCard({ result }) {
         <span aria-hidden="true"> ↗</span>
         <span className="aia-sr-only"> (새 탭에서 열림)</span>
       </a>
+      {onShowDocs && (
+        <button
+          type="button"
+          className="aia-card-docs"
+          onClick={onShowDocs}
+          disabled={docsRequested}
+          aria-label={`'${result.title}' 관련 공식 문서 보기`}
+        >
+          관련 문서
+        </button>
+      )}
     </li>
   );
 }

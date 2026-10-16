@@ -9,6 +9,11 @@ const REQUEST_SUFFIXES = [
   /(좀\s*)?(찾아\s*줘|찾아\s*주세요|찾아줄래|찾아봐|알려\s*줘|알려\s*주세요|보여\s*줘|보여\s*주세요|추천해\s*줘|있어|있나요|있니)\s*[.?!~]*/g,
 ];
 const PARTICLES = /(에서|으로|이란|이랑|에게|은|는|이|가|을|를|에|의|로|와|과|란|도|만)$/;
+
+/** "인덱스란" -> "인덱스". Words of 2 chars or less are left alone ("조인" must stay "조인"). */
+export function stripParticle(word) {
+  return word.length > 2 ? word.replace(PARTICLES, '') : word;
+}
 // Generic words that appear in many post titles ("... 차이", "... 정리") and would match everything.
 const STOPWORDS = new Set([
   '어떤', '무슨', '관련', '대한', '그', '이', '저', '좀', '방법', '뭐야', '뭐',
@@ -31,7 +36,7 @@ export function parseQuery(raw) {
     ...new Set(
       text
         .split(/[\s,.;:!?"'()[\]{}<>/\\|`~^*+=]+/)
-        .map((word) => (word.length > 2 ? word.replace(PARTICLES, '') : word).toLowerCase())
+        .map((word) => stripParticle(word).toLowerCase())
         .filter((word) => word.length >= 2 && !STOPWORDS.has(word)),
     ),
   ].slice(0, MAX_TERMS);

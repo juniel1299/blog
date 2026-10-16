@@ -424,6 +424,13 @@ a.chip:hover { text-decoration: none; filter: brightness(1.05); }
 .aia-card-preview { margin: 4px 0 8px; font-size: 0.85rem; line-height: 1.55; color: var(--text-2); }
 .aia-card-link { display: block; font-size: 0.9rem; font-weight: 700; line-height: 1.45; color: var(--text); }
 .aia-card-link:hover { color: var(--accent); text-decoration: none; }
+.aia-doc .aia-card-preview { margin: 4px 0 0; }
+.aia-card-docs {
+  margin-top: 10px; padding: 4px 12px; border: 1px solid var(--border); border-radius: 999px;
+  background: var(--surface-2); color: var(--text-2); font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+}
+.aia-card-docs:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.aia-card-docs:disabled { opacity: 0.5; cursor: default; }
 .aia-loading { display: inline-flex; gap: 4px; padding: 14px 16px; }
 .aia-loading span {
   width: 6px; height: 6px; border-radius: 50%; background: var(--muted);
