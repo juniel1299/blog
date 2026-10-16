@@ -83,6 +83,23 @@ curl -X POST -H "authorization: Bearer <ADMIN_TOKEN>" https://<worker>.workers.d
 배포 전 `wrangler.jsonc`의 `ALLOWED_ORIGINS`에 블로그 주소(`https://<blog>.tistory.com`)를 추가한다.
 비밀값은 `npx wrangler secret put <NAME>`으로 넣고 코드나 스킨에 쓰지 않는다.
 
+## 자동 배포
+
+`main`에 머지되면 GitHub Actions(`.github/workflows/ci.yml`의 `deploy` 잡)가 검사 통과 후
+D1 마이그레이션 → 공식 문서 seed → `wrangler deploy` → `/health/ready` 확인 순으로 Worker를 배포한다.
+스킨은 티스토리 업로드 API가 없어서 계속 수동(`npm run zip -w skin` 후 스킨 편집에서 업로드).
+
+처음 한 번 설정:
+
+1. Cloudflare 대시보드 → My Profile → API Tokens → Create Token → **Edit Cloudflare Workers** 템플릿
+   - 권한 추가: Account / **D1** / Edit, Account / **Vectorize** / Edit
+   - Account Resources: 이 계정만
+2. GitHub 저장소 → Settings → Secrets and variables → Actions → New repository secret
+   - `CLOUDFLARE_API_TOKEN`: 위에서 만든 토큰
+   - `CLOUDFLARE_ACCOUNT_ID`: Workers & Pages 화면 오른쪽 Account details의 Account ID
+
+`ADMIN_TOKEN` 같은 Worker secret은 배포로 바뀌지 않는다 (`wrangler secret put`으로만 변경).
+
 ## 문서
 
 - [docs/architecture.md](docs/architecture.md): 구조, RAG 흐름, 데이터 모델, Phase 계획
