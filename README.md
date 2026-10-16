@@ -94,9 +94,12 @@ D1 마이그레이션 → 공식 문서 seed → `wrangler deploy` → `/health/
 1. Cloudflare 대시보드 → My Profile → API Tokens → Create Token → **Edit Cloudflare Workers** 템플릿
    - 권한 추가: Account / **D1** / Edit, Account / **Vectorize** / Edit
    - Account Resources: 이 계정만
-2. GitHub 저장소 → Settings → Secrets and variables → Actions → New repository secret
-   - `CLOUDFLARE_API_TOKEN`: 위에서 만든 토큰
-   - `CLOUDFLARE_ACCOUNT_ID`: Workers & Pages 화면 오른쪽 Account details의 Account ID
+2. GitHub 저장소 → Settings → Secrets and variables → Actions → **Repository secrets** → New repository secret
+   - `BLOG`: 위에서 만든 토큰. `cfut_...`로 시작하는 값만 (`Bearer `, 따옴표, 줄바꿈 없이)
+   - `FLARE`: Account ID (Workers & Pages 화면 오른쪽 Account details, 32자리)
+
+워크플로는 이 두 시크릿을 wrangler가 읽는 환경변수 `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`로 넘긴다.
+저장소가 public이므로 토큰을 `ci.yml` 같은 파일에 직접 쓰지 않는다. 노출됐다면 Cloudflare에서 즉시 Roll 한다.
 
 `ADMIN_TOKEN` 같은 Worker secret은 배포로 바뀌지 않는다 (`wrangler secret put`으로만 변경).
 

@@ -12,8 +12,8 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -35,7 +35,8 @@ jobs:
           npm run db:seed:local -w worker
 
   # Deploys the Worker after every merge to main, once `check` has passed.
-  # Needs repo secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (see README, 자동 배포).
+  # Needs repo secrets BLOG (Cloudflare API token) and FLARE (account ID); see README, 자동 배포.
+  # The repository is public: never write the token in this file.
   # The Tistory skin is not deployed here: Tistory has no upload API, so skin changes stay manual.
   deploy:
     needs: check
@@ -49,8 +50,8 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.FLARE }}
       WORKER_URL: https://tistory-ai-assistant-api.youngs5440.workers.dev
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
@@ -58,7 +59,7 @@ jobs:
       - name: Check deploy secrets
         run: |
           [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ] \
-            || { echo "::error::Set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repo secrets"; exit 1; }
+            || { echo "::error::Set the BLOG (API token) and FLARE (account ID) repo secrets"; exit 1; }
       - name: Apply D1 migrations
         run: npm run db:migrate:remote -w worker
       - name: Upsert doc links seed
