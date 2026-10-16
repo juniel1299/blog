@@ -1,5 +1,6 @@
 import { errorBody, json } from './http.js';
 import { readPost, runIngest } from './ingest/run.js';
+import { RETENTION_DAYS, topMisses } from './misses.js';
 import { MAX_QUERY_CHARS } from './search/query.js';
 import { debugRankings } from './search/search.js';
 
@@ -37,6 +38,13 @@ export async function handleAdmin(request, env, { pathname, searchParams }, requ
       const id = searchParams.get('id') ?? '';
       if (!/^\d{1,9}$/.test(id)) return json(errorBody('INVALID_ID', 'id must be a post number', requestId), 400, headers);
       return json({ ...(await readPost({ url: `${env.BLOG_ORIGIN}/${id}` })), requestId }, 200, headers);
+    }
+    if (request.method === 'GET' && pathname === '/admin/misses') {
+      const days = Number(searchParams.get('days') ?? 30);
+      if (!Number.isInteger(days) || days < 1 || days > RETENTION_DAYS) {
+        return json(errorBody('INVALID_DAYS', `days must be 1-${RETENTION_DAYS}`, requestId), 400, headers);
+      }
+      return json({ days, misses: await topMisses(env, days), requestId }, 200, headers);
     }
     if (request.method === 'GET' && pathname === '/admin/search-debug') {
       const q = (searchParams.get('q') ?? '').trim();

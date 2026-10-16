@@ -20,6 +20,22 @@ const STOPWORDS = new Set([
   '차이', '차이점', '정리', '개념', '비교', '사용법', '예제', 'vs',
 ]);
 
+// Korean transliterations -> the English term posts often use instead ("머티리얼라이즈드 뷰" vs
+// "Materialized View"; found by the eval set). "자바" is left out on purpose: "java" is a substring of
+// "javascript" in titles and would drag in JS posts.
+const ALIASES = new Map([
+  ['뷰', 'view'], ['머티리얼라이즈드', 'materialized'], ['스냅샷', 'snapshot'], ['리액트', 'react'],
+  ['스프링', 'spring'], ['오라클', 'oracle'], ['인덱스', 'index'], ['조인', 'join'], ['피벗', 'pivot'],
+  ['스레드', 'thread'], ['쓰레드', 'thread'], ['프로세스', 'process'], ['스택', 'stack'], ['큐', 'queue'],
+  ['훅', 'hook'], ['컬럼', 'column'], ['테이블', 'table'],
+]);
+// Particles may hang off even 1-char words before an alias lookup ("뷰랑" -> "뷰").
+const ALIAS_PARTICLES = /(이랑|으로|에서|랑|와|과|은|는|이|가|을|를|에|의|로|도|만)$/;
+
+function aliasOf(word) {
+  return ALIASES.get(word) ?? ALIASES.get(word.replace(ALIAS_PARTICLES, ''));
+}
+
 /**
  * Turns a chat-style request into search inputs.
  * @param {string} raw user input
@@ -36,8 +52,9 @@ export function parseQuery(raw) {
     ...new Set(
       text
         .split(/[\s,.;:!?"'()[\]{}<>/\\|`~^*+=]+/)
-        .map((word) => stripParticle(word).toLowerCase())
-        .filter((word) => word.length >= 2 && !STOPWORDS.has(word)),
+        .map((word) => word.toLowerCase())
+        .flatMap((word) => [stripParticle(word), aliasOf(word)])
+        .filter((word) => word && word.length >= 2 && !STOPWORDS.has(word)),
     ),
   ].slice(0, MAX_TERMS);
 

@@ -8,16 +8,21 @@ describe('parseQuery', () => {
   test('strips the chat request phrasing and particles', () => {
     expect(parseQuery('PostgreSQL 인덱스에 대한 글 찾아줘')).toMatchObject({
       text: 'PostgreSQL 인덱스',
-      terms: ['postgresql', '인덱스'],
-      ftsQuery: '"postgresql" OR "인덱스"',
+      terms: ['postgresql', '인덱스', 'index'],
+      ftsQuery: '"postgresql" OR "인덱스" OR "index"',
       likeTerms: [],
     });
   });
 
   test('2-char terms go to LIKE because trigram cannot match them', () => {
-    const parsed = parseQuery('조인 관련 글 알려줘');
+    const parsed = parseQuery('자바 관련 글 알려줘');
     expect(parsed.ftsQuery).toBeNull();
-    expect(parsed.likeTerms).toEqual(['조인']);
+    expect(parsed.likeTerms).toEqual(['자바']);
+  });
+
+  test('Korean transliterations also search their English term', () => {
+    expect(parseQuery('뷰랑 머티리얼라이즈드 뷰').terms).toEqual(['뷰랑', 'view', '머티리얼라이즈드', 'materialized']);
+    expect(parseQuery('조인 글').ftsQuery).toBe('"join"');
   });
 
   test('FTS operators and quotes in user input stay inert', () => {

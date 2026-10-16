@@ -103,6 +103,15 @@ D1 마이그레이션 → 공식 문서 seed → `wrangler deploy` → `/health/
 
 `ADMIN_TOKEN` 같은 Worker secret은 배포로 바뀌지 않는다 (`wrangler secret put`으로만 변경).
 
+## 검색 품질
+
+```bash
+npm run eval:search -w worker        # 배포된 Worker 대상, worker/.dev.vars의 ADMIN_TOKEN 사용
+```
+
+검색 로직을 바꾸면 이 평가를 돌려 hit@3 / top1 / 오탐률이 나빠지지 않았는지 확인한다 (기록은 docs/architecture.md).
+결과 0건 질문 상위 목록: `curl -H "authorization: Bearer <ADMIN_TOKEN>" "<Worker URL>/admin/misses?days=30"`
+
 ## 문서
 
 - [docs/architecture.md](docs/architecture.md): 구조, RAG 흐름, 데이터 모델, Phase 계획

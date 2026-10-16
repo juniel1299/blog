@@ -48,6 +48,18 @@
 0.4로 두면 "오늘 날씨"가 본문에 "오늘"이 있는 Calendar 글을 끌고 와서 본문 키워드도 0.5를 요구한다.
 Reranker와 LLM 한 줄 요약은 보류 (Phase 3 결정: 추출식 미리보기로 충분, 필요해지면 재검토).
 
+### 품질 평가 (`worker/eval/`)
+
+- `search-cases.json`: 실제 글 기준 질문 30개(기대 글 번호) + 무관한 질문 5개(결과 없어야 함)
+- `npm run eval:search -w worker`: 배포된 Worker의 `/admin/search-debug`로 실행 (캐시·IP 제한 없음, `ADMIN_TOKEN` 필요).
+  `EVAL_API=http://localhost:8788`로 `wrangler dev --remote`에 돌리면 배포 전에 비교할 수 있다
+- 지표: hit@3(기대 글이 상위 3개 안), top1, 무관한 질문 오탐률. 기준(85% / 70% / 20%) 미달이면 종료 코드 1
+- 실제 색인 기준 기록 (2026-10-16): 처음 hit@3 97% / top1 90% / 오탐 0% →
+  음역 별칭 추가 후 100% / 93% / 0%. 놓친 케이스는 "머티리얼라이즈드 뷰"(글은 영어 "Materialized View")
+- 음역 별칭(`src/search/query.js` ALIASES): 리액트→react, 뷰→view 등. 질문에 영어 단어를 추가로 검색한다.
+  "자바"→"java"는 제목의 "javascript"까지 잡아서 넣지 않았다
+- 실서비스에서 결과 0건인 질문은 `GET /admin/misses`로 보고 평가 세트·별칭·글 주제를 보강한다
+
 ## 데이터 모델 (`worker/migrations/0002_posts.sql`)
 
 ```

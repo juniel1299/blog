@@ -1,5 +1,6 @@
 import { relatedDocs } from './docs.js';
 import { errorBody, json } from './http.js';
+import { recordMiss } from './misses.js';
 import { MAX_QUERY_CHARS } from './search/query.js';
 import { searchPosts } from './search/search.js';
 
@@ -8,8 +9,9 @@ const CACHE_SECONDS = 600;
 const SEARCH_PATH = '/api/v1/search';
 const DOCS_PATH = /^\/api\/v1\/posts\/(\d{1,9})\/docs$/;
 
-function cacheKey(query) {
-  const normalized = query.toLowerCase().replace(/\s+/g, ' ').trim();
+const normalizeQuery = (query) => query.toLowerCase().replace(/\s+/g, ' ').trim();
+
+function cacheKey(normalized) {
   return new Request(`https://search-cache.internal/v1?q=${encodeURIComponent(normalized)}`);
 }
 
@@ -66,7 +68,8 @@ export async function handleApi(request, env, ctx, { pathname }, requestId, head
   }
 
   const cache = globalThis.caches?.default;
-  const key = cacheKey(query);
+  const normalized = normalizeQuery(query);
+  const key = cacheKey(normalized);
   try {
     const cached = await cache?.match(key);
     if (cached) return json({ ...(await cached.json()), requestId }, 200, headers);
@@ -75,6 +78,8 @@ export async function handleApi(request, env, ctx, { pathname }, requestId, head
     ctx?.waitUntil(
       cache?.put(key, new Response(JSON.stringify(body), { headers: { 'cache-control': `max-age=${CACHE_SECONDS}` } })),
     );
+    // Cached repeats within 10 minutes aren't re-logged, so counts are "distinct-ish" asks.
+    if (body.results.length === 0) ctx?.waitUntil(recordMiss(env, normalized));
     return json({ ...body, requestId }, 200, headers);
   } catch (error) {
     console.error(JSON.stringify({ requestId, event: 'search_failed', error: String(error) }));
