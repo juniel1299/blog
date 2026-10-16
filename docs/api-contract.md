@@ -28,6 +28,9 @@
 |---|---|---|---|
 | POST | `/admin/ingest` | 수집 1회 실행 결과 `{ indexed, skipped, failed, deleted, remaining }` (글 번호 배열, remaining은 남은 개수) | 500 `ADMIN_FAILED` (사이트맵 실패 등) |
 | GET | `/admin/preview?id=<글번호>` | 쓰기 없이 추출/청크 결과 `{ post, chunks }` | 400 `INVALID_ID`, 500 `ADMIN_FAILED` |
+| GET | `/admin/search-debug?q=<질문>` | `{ parsed, strong, body, vector: [{id, score}], picked }` 검색 후보와 점수, 최종 선택 (캐시·IP 제한 없음, `eval:search`가 사용) | 400 `INVALID_QUERY` |
+| GET | `/admin/similar-debug?id=<글번호>` | `{ id, scores: [{postId, score}] }` 비슷한 글 점수 상위 10개 (임계값 없이) | 400 `INVALID_ID` |
+| GET | `/admin/misses?days=<1~90>` | `{ days, misses: [{query, count, last_seen}] }` 결과 0건 질문 상위 50개 (기본 30일) | 400 `INVALID_DAYS` |
 
 ### `POST /api/v1/search`
 
