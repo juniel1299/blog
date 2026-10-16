@@ -37,19 +37,43 @@ async function requestJson(url, init, fetchImpl) {
 
 const apiUrl = (apiBase, path) => `${apiBase.replace(/\/+$/, '')}${path}`;
 
+const safeCards = (list) => list.filter((item) => typeof item.title === 'string' && isSafeUrl(item.url));
+
 /**
  * @param {string} apiBase e.g. https://tistory-ai-assistant-api.<sub>.workers.dev
  * @param {string} query
- * @returns {Promise<{ postId: number, title: string, url: string, category: string | null, heading: string | null, preview: string }[]>}
+ * @param {{ offset?: number, fetchImpl?: typeof fetch }} [options] offset 3 = "더 보기" page
+ * @returns {Promise<{ mode: 'search' | 'category' | 'recent', category: string | null, offset: number, hasMore: boolean,
+ *   results: { postId: number, title: string, url: string, category: string | null, heading: string | null, preview: string }[] }>}
  */
-export async function searchBlog(apiBase, query, { fetchImpl = fetch } = {}) {
+export async function searchBlog(apiBase, query, { offset = 0, fetchImpl = fetch } = {}) {
   const body = await requestJson(
     apiUrl(apiBase, '/api/v1/search'),
-    { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query }) },
+    { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query, offset }) },
     fetchImpl,
   );
   if (!Array.isArray(body.results)) throw new SearchError('server', '검색 결과를 읽지 못했어요.');
-  return body.results.filter((result) => typeof result.title === 'string' && isSafeUrl(result.url));
+  return {
+    mode: body.mode ?? 'search',
+    category: body.category ?? null,
+    offset: body.offset ?? offset,
+    hasMore: Boolean(body.hasMore),
+    results: safeCards(body.results),
+  };
+}
+
+/** Newest posts (cards), shown when the chat opens off a post page. */
+export async function fetchRecent(apiBase, { fetchImpl = fetch } = {}) {
+  const body = await requestJson(apiUrl(apiBase, '/api/v1/posts/recent'), {}, fetchImpl);
+  if (!Array.isArray(body.posts)) throw new SearchError('server', '최근 글을 읽지 못했어요.');
+  return safeCards(body.posts);
+}
+
+/** Posts similar to the one being read (cards). */
+export async function fetchSimilar(apiBase, postId, { fetchImpl = fetch } = {}) {
+  const body = await requestJson(apiUrl(apiBase, `/api/v1/posts/${encodeURIComponent(postId)}/similar`), {}, fetchImpl);
+  if (!Array.isArray(body.posts)) throw new SearchError('server', '추천 글을 읽지 못했어요.');
+  return safeCards(body.posts);
 }
 
 /**

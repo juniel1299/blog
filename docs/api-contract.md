@@ -1,6 +1,6 @@
 # API Contract
 
-구현된 것: `GET /health/live`, `GET /health/ready`, `POST /api/v1/search`, `GET /api/v1/posts/:postId/docs`, 관리자 API(`/admin/*`).
+구현된 것: `GET /health/live`, `GET /health/ready`, `POST /api/v1/search`, `GET /api/v1/posts/recent`, `GET /api/v1/posts/:postId/similar`, `GET /api/v1/posts/:postId/docs`, 관리자 API(`/admin/*`). 공개 API는 모두 같은 IP 제한(분당 20회)을 쓴다.
 
 ## 공통
 
@@ -33,11 +33,15 @@
 
 ```json
 // request
-{ "query": "인덱스에 대한 글 찾아줘" }
+{ "query": "인덱스에 대한 글 찾아줘", "offset": 0 }
 
 // response 200
 {
   "query": "인덱스에 대한 글 찾아줘",
+  "mode": "search",
+  "category": null,
+  "offset": 0,
+  "hasMore": true,
   "results": [
     {
       "postId": 122,
@@ -52,7 +56,12 @@
 }
 ```
 
-- `results`는 최대 3개(관련 높은 순), 없으면 빈 배열 → 위젯은 "관련 글을 찾지 못했어요"
+- 한 번에 최대 6개를 계산해 캐시하고 3개씩 준다. `offset`은 0 또는 3("더 보기"), 그 외 400. `hasMore`가 true면 다음 페이지가 있다
+- `mode`:
+  - `search`: 일반 검색
+  - `category`: "X 카테고리(에서) …" → X가 글 카테고리 경로의 한 단계와 일치하는 글만 (자바→java, 리액트→react 별칭; "java"는 "JavaScript"와 매칭되지 않음). 카테고리 말고 다른 단어가 없으면 그 카테고리 최신 글
+  - `recent`: "최근 글 보여줘"처럼 최근 글만 묻는 경우 최신 글 목록
+- `results`가 없으면 빈 배열 → 위젯은 "관련 글을 찾지 못했어요" (category면 "'X' 카테고리에서 …")
 - `preview`: 가장 관련 높은 청크에서 뽑은 한 줄(추출식, LLM 아님). LLM 한 줄 요약은 Phase 3
 - `query` 1~200자 문자열, 요청 본문 2KB 이하. 그 외 400 `INVALID_QUERY`
 - IP당 분당 20회. 초과 시 429 `RATE_LIMITED`
@@ -62,6 +71,16 @@
 관리자용 `GET /admin/search-debug?q=` 는 후보(키워드/벡터 점수)와 최종 선택을 보여준다 (임계값 조정용).
 결과가 0건인 질문은 `search_misses`에 **정규화한 질문 텍스트만** 기록한다 (IP·식별자 없음, 90일 후 cron이 삭제).
 관리자용 `GET /admin/misses?days=30` (1~90) → `{ days, misses: [{ query, count, last_seen }] }` 상위 50개.
+
+### `GET /api/v1/posts/recent`
+
+`{ "posts": [카드 x3], "requestId" }`: 최신 글 3개 (카드 형식은 search의 results와 같음, preview는 글 앞부분 문장). 위젯이 글 목록 페이지에서 열릴 때 보여준다.
+
+### `GET /api/v1/posts/:postId/similar`
+
+`{ "postId", "posts": [카드 최대 3개], "requestId" }`: 그 글과 비슷한 글. 글의 청크 벡터 평균으로 Vectorize를 검색해 다른 글마다 최고 점수, 0.55 이상만.
+색인되지 않은 글 404 `POST_NOT_FOUND`. 위젯이 글 본문 페이지(`/123`)에서 열릴 때 보여준다 (없으면 최근 글).
+관리자용 `GET /admin/similar-debug?id=` 는 점수 상위 10개를 보여준다 (임계값 조정용).
 
 ### `GET /api/v1/posts/:postId/docs`
 

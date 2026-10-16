@@ -431,6 +431,18 @@ a.chip:hover { text-decoration: none; filter: brightness(1.05); }
 }
 .aia-card-docs:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 .aia-card-docs:disabled { opacity: 0.5; cursor: default; }
+.aia-suggestions { display: flex; flex-wrap: wrap; gap: 6px; }
+.aia-chip {
+  padding: 6px 12px; border: 1px solid var(--border); border-radius: 999px;
+  background: var(--surface); color: var(--text-2); font: inherit; font-size: 0.8rem; cursor: pointer;
+}
+.aia-chip:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.aia-chip:disabled { opacity: 0.5; cursor: default; }
+.aia-more {
+  align-self: center; padding: 6px 18px; border: 1px solid var(--border); border-radius: 999px;
+  background: var(--surface); color: var(--text-2); font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+}
+.aia-more:hover { border-color: var(--accent); color: var(--accent); }
 .aia-loading { display: inline-flex; gap: 4px; padding: 14px 16px; }
 .aia-loading span {
   width: 6px; height: 6px; border-radius: 50%; background: var(--muted);
