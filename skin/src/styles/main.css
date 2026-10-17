@@ -335,9 +335,16 @@ a.chip:hover { text-decoration: none; filter: brightness(1.05); }
 .profile-desc { margin: 0; color: var(--muted); font-size: 0.85rem; }
 
 .category ul { list-style: none; margin: 0; padding: 0; }
-.category a { display: flex; justify-content: space-between; padding: 5px 8px; border-radius: 8px; color: var(--text-2); font-size: 0.92rem; }
+.category a { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 8px; color: var(--text-2); font-size: 0.92rem; }
 .category a:hover { background: var(--surface-2); color: var(--accent); text-decoration: none; }
-.category .c_cnt { color: var(--muted); font-size: 0.8rem; }
+.category .c_cnt { order: 2; margin-left: auto; color: var(--muted); font-size: 0.8rem; }
+/* Tistory appends a pixel "N" gif after the count for new posts; show a small badge next to the name instead. */
+.category a > img[alt='N'] { display: none; }
+.category a:has(> img[alt='N'])::after {
+  content: 'N'; order: 1; display: inline-grid; place-items: center; flex-shrink: 0;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--accent); color: var(--accent-text); font-size: 0.6rem; font-weight: 800; line-height: 1;
+}
 .category .link_tit { font-weight: 700; color: var(--text); }
 .category .sub_category_list a { padding-left: 22px; font-size: 0.86rem; color: var(--muted); }
 
