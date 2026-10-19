@@ -1,7 +1,7 @@
 import { relatedDocs } from './docs.js';
 import { errorBody, json } from './http.js';
 import { recordMiss } from './misses.js';
-import { recentPosts, similarPosts } from './posts.js';
+import { recentPosts, seriesPosts, similarPosts } from './posts.js';
 import { extractCategory, isRecentRequest } from './search/intent.js';
 import { MAX_QUERY_CHARS } from './search/query.js';
 import { RESULT_LIMIT, RESULT_POOL, searchPosts } from './search/search.js';
@@ -11,7 +11,7 @@ const CACHE_SECONDS = 600;
 const PUBLIC_CACHE = { 'cache-control': `public, max-age=${CACHE_SECONDS}` };
 const SEARCH_PATH = '/api/v1/search';
 const RECENT_PATH = '/api/v1/posts/recent';
-const POST_PATH = /^\/api\/v1\/posts\/(\d{1,9})\/(docs|similar)$/;
+const POST_PATH = /^\/api\/v1\/posts\/(\d{1,9})\/(docs|similar|series)$/;
 
 const normalizeQuery = (query) => query.toLowerCase().replace(/\s+/g, ' ').trim();
 
@@ -83,6 +83,11 @@ async function handlePost(env, postId, kind, requestId, headers) {
       const docs = await relatedDocs(env, postId);
       if (docs === null) return json(errorBody('POST_NOT_FOUND', '글을 찾을 수 없어요.', requestId), 404, headers);
       return json({ postId, docs, requestId }, 200, { ...headers, ...PUBLIC_CACHE });
+    }
+    if (kind === 'series') {
+      const series = await seriesPosts(env, postId);
+      if (series === undefined) return json(errorBody('POST_NOT_FOUND', '글을 찾을 수 없어요.', requestId), 404, headers);
+      return json({ postId, series, requestId }, 200, { ...headers, ...PUBLIC_CACHE });
     }
     const posts = await similarPosts(env, postId, RESULT_LIMIT);
     if (posts === null) return json(errorBody('POST_NOT_FOUND', '글을 찾을 수 없어요.', requestId), 404, headers);

@@ -79,3 +79,36 @@ export async function similarPosts(env, postId, limit) {
   const ids = scores.filter((s) => s.score >= MIN_SIMILAR_SCORE).slice(0, limit).map((s) => s.postId);
   return postCards(env, ids);
 }
+
+// "[React] 7. useEffect" -> React #7; "[캡스톤디자인] 동작 방식 - 2 (…)" -> 캡스톤디자인 #2
+const SERIES_PREFIX = /^\s*\[([^\]]+)\]\s*(.*)$/;
+const EPISODE = [/^(\d{1,3})\s*\./, /-\s*(\d{1,3})(?=\s|\(|$)/];
+
+/** @returns {{ key: string, name: string, order: number } | null} */
+export function seriesOf(title) {
+  const prefix = title.match(SERIES_PREFIX);
+  if (!prefix) return null;
+  for (const pattern of EPISODE) {
+    const episode = prefix[2].match(pattern);
+    if (episode) return { key: prefix[1].trim().toLowerCase(), name: prefix[1].trim(), order: Number(episode[1]) };
+  }
+  return null;
+}
+
+/**
+ * The series `postId` belongs to, episodes in order. undefined when the post isn't indexed,
+ * null when it isn't part of a series (needs 2+ episodes).
+ */
+export async function seriesPosts(env, postId) {
+  const { results } = await env.DB.prepare("SELECT id, title, url FROM posts WHERE status = 'indexed'").all();
+  const current = results.find((row) => row.id === postId);
+  if (!current) return undefined;
+  const own = seriesOf(current.title);
+  if (!own) return null;
+  const posts = results
+    .map((row) => ({ row, series: seriesOf(row.title) }))
+    .filter(({ series }) => series?.key === own.key)
+    .sort((a, b) => a.series.order - b.series.order || a.row.id - b.row.id)
+    .map(({ row }) => ({ postId: row.id, title: row.title, url: row.url }));
+  return posts.length >= 2 ? { name: own.name, posts } : null;
+}

@@ -309,6 +309,35 @@ a.chip:hover { text-decoration: none; filter: brightness(1.05); }
   background: var(--surface); color: var(--text); border-color: var(--border);
 }
 
+/* ---------- Code blocks (scripts/code-blocks.js) ---------- */
+.code-block { margin: 1.6em 0; }
+.code-block > pre { margin: 0; border-top-left-radius: 0; border-top-right-radius: 0; }
+.code-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 6px 10px 6px 16px; border: 1px solid var(--border); border-bottom: none;
+  border-radius: 12px 12px 0 0; background: var(--code-bg); color: var(--muted);
+  font-size: 0.75rem; font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+}
+.code-copy {
+  padding: 2px 10px; border: 1px solid var(--border); border-radius: 999px;
+  background: transparent; color: var(--code-text); font: inherit; cursor: pointer;
+}
+.code-copy:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---------- Post meta extras + series (scripts/post-meta.js, scripts/series.js) ---------- */
+.post-meta .post-reading::before,
+.post-meta .post-updated::before { content: '·'; margin-right: 12px; color: var(--border); }
+.series {
+  margin: -16px 0 32px; padding: 14px 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-soft);
+}
+.series summary { display: flex; justify-content: space-between; gap: 12px; cursor: pointer; font-weight: 700; color: var(--text); }
+.series-pos { color: var(--muted); font-weight: 500; font-size: 0.85rem; }
+.series-list { margin: 10px 0 0; padding-left: 1.4em; font-size: 0.9rem; }
+.series-list a { color: var(--text-2); }
+.series-list a[aria-current='page'] { color: var(--accent); font-weight: 700; }
+.series-steps { display: flex; justify-content: space-between; gap: 12px; margin-top: 10px; font-size: 0.85rem; }
+.series-steps .series-next { margin-left: auto; text-align: right; }
+
 /* ---------- TOC ---------- */
 .toc { position: sticky; top: 96px; align-self: start; max-height: calc(100vh - 120px); overflow-y: auto; font-size: 0.85rem; }
 .toc-toggle { display: none; }
