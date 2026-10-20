@@ -97,7 +97,7 @@ RRF(k=60)로 세 목록을 합치고 **글당 가장 좋은 청크 1개**만 남
 
 ## 관련 공식 문서 매칭 (`docs.js`)
 
-큐레이션 링크(`worker/seed/doc_links.sql`, 41개)만 쓴다 ([ADR 0002](adr/0002-docs-as-curated-links.md)).
+큐레이션 링크(`worker/seed/doc_links.sql`, 52개: Java/Spring/Oracle/HTML·CSS/JS/React/Web + Next.js/MCP·Claude Code/OpenCV)만 쓴다 ([ADR 0002](adr/0002-docs-as-curated-links.md)).
 
 ```
 점수(문서) = Σ  가중치(키워드가 글의 어디에 있나) × IDF(키워드)

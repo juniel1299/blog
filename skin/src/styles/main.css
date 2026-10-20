@@ -113,6 +113,25 @@ img { max-width: 100%; }
   transition: border-color 0.15s, width 0.2s, background-color 0.15s;
 }
 .search input:focus { outline: none; border-color: var(--accent); background: var(--surface); width: 260px; }
+.search-panel {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 30;
+  width: min(380px, calc(100vw - 32px)); padding: 6px;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow);
+}
+.search-panel[hidden] { display: none; }
+.search-item { display: block; padding: 8px 10px; border-radius: 8px; color: var(--text); text-decoration: none; }
+.search-item:hover, .search-item[aria-selected='true'] { background: var(--accent-soft); text-decoration: none; }
+.search-item-title { display: block; font-size: 0.9rem; font-weight: 600; line-height: 1.4; }
+.search-item-meta {
+  display: block; margin-top: 2px; overflow: hidden; color: var(--muted); font-size: 0.78rem;
+  white-space: nowrap; text-overflow: ellipsis;
+}
+.search-empty { margin: 0; padding: 10px; color: var(--muted); font-size: 0.85rem; }
+.search-all {
+  display: block; width: 100%; margin-top: 4px; padding: 8px 10px; border: none; border-top: 1px solid var(--border);
+  border-radius: 0 0 8px 8px; background: none; color: var(--accent); font: inherit; font-size: 0.82rem; text-align: left; cursor: pointer;
+}
+.search-all:hover { background: var(--surface-2); }
 .icon-button {
   display: grid; place-items: center; width: 38px; height: 38px;
   border: 1px solid var(--border); border-radius: 999px;
@@ -538,6 +557,10 @@ a.chip:hover { text-decoration: none; filter: brightness(1.05); }
   .post-nav-item.next { grid-column: 1; }
   .comment-guest { grid-template-columns: minmax(0, 1fr); }
   .search input, .search input:focus { width: 130px; }
+  /* Panel spans the header instead of hanging off the narrow search box. */
+  .header-inner { position: relative; }
+  .search { position: static; }
+  .search-panel { top: calc(100% + 4px); left: 16px; right: 16px; width: auto; }
 }
 
 @media (max-width: 480px) {
