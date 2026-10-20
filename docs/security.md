@@ -31,6 +31,7 @@
 ## 개인정보
 
 - **결과 0건 질문 로그**(`search_misses`): 정규화한 질문 텍스트와 시각만. IP, User-Agent, 쿠키, 식별자 없음. 90일 후 자동 삭제
+- **검색 결과 피드백**(`search_feedback`): 정규화한 질문, 👍/👎, 보여준 글 번호, 시각만. 식별자 없음. 90일 후 자동 삭제
 - 그 외 질문은 저장하지 않는다 (Workers 로그에 오류 이벤트만, 질문 원문은 남기지 않음)
 - Rate Limiting은 IP를 키로 쓰지만 Cloudflare 내부 카운터일 뿐 저장하지 않는다
 - 위젯은 `localStorage`에 테마(`light`/`dark`)만 저장

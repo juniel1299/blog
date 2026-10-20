@@ -1,6 +1,6 @@
 # API Contract
 
-구현된 것: `GET /health/live`, `GET /health/ready`, `POST /api/v1/search`, `GET /api/v1/posts/recent`, `GET /api/v1/posts/:postId/similar`, `GET /api/v1/posts/:postId/docs`, `GET /api/v1/posts/:postId/series`, 관리자 API(`/admin/*`). 공개 API는 모두 같은 IP 제한(분당 20회)을 쓴다.
+구현된 것: `GET /health/live`, `GET /health/ready`, `POST /api/v1/search`, `GET /api/v1/posts/recent`, `GET /api/v1/posts/:postId/similar`, `GET /api/v1/posts/:postId/docs`, `GET /api/v1/posts/:postId/series`, `POST /api/v1/feedback`, 관리자 API(`/admin/*`). 공개 API는 모두 같은 IP 제한(분당 20회)을 쓴다.
 
 ## 공통
 
@@ -31,6 +31,7 @@
 | GET | `/admin/search-debug?q=<질문>` | `{ parsed, strong, body, vector: [{id, score}], picked }` 검색 후보와 점수, 최종 선택 (캐시·IP 제한 없음, `eval:search`가 사용) | 400 `INVALID_QUERY` |
 | GET | `/admin/similar-debug?id=<글번호>` | `{ id, scores: [{postId, score}] }` 비슷한 글 점수 상위 10개 (임계값 없이) | 400 `INVALID_ID` |
 | GET | `/admin/misses?days=<1~90>` | `{ days, misses: [{query, count, last_seen}] }` 결과 0건 질문 상위 50개 (기본 30일) | 400 `INVALID_DAYS` |
+| GET | `/admin/feedback?days=<1~90>` | `{ days, totals: {up, down}, queries: [{query, down, up, lastPostIds, last_seen}] }` 👎 많은 질문 상위 50개 | 400 `INVALID_DAYS` |
 
 ### `POST /api/v1/search`
 
@@ -88,6 +89,11 @@
 ### `GET /api/v1/posts/:postId/series`
 
 `{ "postId", "series": { "name", "posts": [{ postId, title, url }] } | null, "requestId" }`: 제목이 `[이름] 7. …` 또는 `[이름] … - 2` 형식인 글의 시리즈(같은 이름, 회차 순, 2편 이상). 시리즈가 아니면 `series: null`, 색인되지 않은 글 404 `POST_NOT_FOUND`. 스킨이 글 머리 아래 시리즈 상자에 쓴다.
+
+### `POST /api/v1/feedback`
+
+`{ "query": "리액트 상태관리", "vote": "up" | "down", "postIds": [98, 99] }` → 200 `{ ok: true }`. 위젯이 검색 결과 한 페이지 아래 👍/👎로 보낸다.
+질문은 정규화해 `search_feedback`에 저장 (IP·식별자 없음). 잘못된 본문(1KB 초과, vote 외 값, postIds 0개 또는 4개 이상) 400 `INVALID_FEEDBACK`, 저장 실패 500 `FEEDBACK_FAILED`. 같은 IP 제한.
 
 ### `GET /api/v1/posts/:postId/docs`
 

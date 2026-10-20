@@ -85,3 +85,15 @@ export async function fetchDocs(apiBase, postId, { fetchImpl = fetch } = {}) {
   if (!Array.isArray(body.docs)) throw new SearchError('server', '관련 문서를 읽지 못했어요.');
   return body.docs.filter((doc) => typeof doc.title === 'string' && isSafeUrl(doc.url));
 }
+
+/**
+ * 👍/👎 for one page of search results. Resolves when stored; throws SearchError otherwise.
+ * @param {{ query: string, vote: 'up' | 'down', postIds: number[] }} feedback
+ */
+export async function sendFeedback(apiBase, feedback, { fetchImpl = fetch } = {}) {
+  await requestJson(
+    apiUrl(apiBase, '/api/v1/feedback'),
+    { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(feedback) },
+    fetchImpl,
+  );
+}

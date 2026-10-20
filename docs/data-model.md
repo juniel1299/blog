@@ -45,7 +45,7 @@ FTS5 가상 테이블, `tokenize = 'trigram'` (한국어 부분 일치: "인덱�
 | title, url UNIQUE, description | 표시용. URL은 seed 작성 시 HTTP 200 확인 |
 | keywords | JSON 배열(소문자). 글 태그/카테고리/제목과 매칭 |
 
-데이터: `worker/seed/doc_links.sql` (41개, `url` 기준 upsert라 다시 실행해도 안전). CI 배포 때마다 적용.
+데이터: `worker/seed/doc_links.sql` (52개, `url` 기준 upsert라 다시 실행해도 안전). CI 배포 때마다 적용.
 seed에서 행을 지워도 DB에서 지워지지 않는다 → 삭제는 `wrangler d1 execute`로 따로.
 
 ### search_misses (0003)
@@ -57,6 +57,18 @@ seed에서 행을 지워도 DB에서 지워지지 않는다 → 삭제는 `wrang
 | created_at | `datetime('now')` (UTC) |
 
 결과 0건(최근 글 요청 제외)이고 캐시에 없을 때만 기록 → 10분 안의 같은 질문은 1번. Cron이 90일 지난 행 삭제.
+
+### search_feedback (0004)
+
+| 컬럼 | 설명 |
+|---|---|
+| id | AUTOINCREMENT |
+| query | 소문자·공백 정리한 질문 텍스트 (≤200자). **IP·식별자 없음** |
+| vote | `up` / `down` |
+| post_ids | 그때 보여준 글 번호 JSON 배열 (1~3개) |
+| created_at | `datetime('now')` (UTC) |
+
+채팅 검색 결과 한 페이지마다 👍/👎 한 번. Cron이 90일 지난 행 삭제.
 
 ## Vectorize (`tistory-posts`)
 

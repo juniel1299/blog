@@ -41,6 +41,10 @@
 curl -H "authorization: Bearer $(sed -n 's/^ADMIN_TOKEN=//p' worker/.dev.vars)" \
   "https://tistory-ai-assistant-api.youngs5440.workers.dev/admin/misses?days=30"
 
+# 👍/👎 합계와 👎 많은 질문
+curl -H "authorization: Bearer $(sed -n 's/^ADMIN_TOKEN=//p' worker/.dev.vars)" \
+  "https://tistory-ai-assistant-api.youngs5440.workers.dev/admin/feedback?days=30"
+
 # 검색 품질 (배포본 대상)
 npm run eval:search -w worker
 ```

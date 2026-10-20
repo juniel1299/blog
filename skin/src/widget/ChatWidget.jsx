@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { MAX_QUERY_CHARS, fetchDocs, fetchRecent, fetchSimilar, searchBlog } from './api.js';
+import { MAX_QUERY_CHARS, fetchDocs, fetchRecent, fetchSimilar, searchBlog, sendFeedback } from './api.js';
 import { ResultCard } from './ResultCard.jsx';
 
 const TITLE = '블로그 AI 도우미';
@@ -64,6 +64,26 @@ function CardsAnswer({ label, results, actions }) {
   );
 }
 
+const THANKS = { up: '알려줘서 고마워요.', down: '알려줘서 고마워요. 검색을 고치는 데 쓸게요.' };
+
+/** 👍/👎 under a page of search results; message.feedback is 'sending' | 'error' | 'up' | 'down'. */
+function Feedback({ message, actions }) {
+  if (THANKS[message.feedback]) return <p className="aia-feedback-note">{THANKS[message.feedback]}</p>;
+  const sending = message.feedback === 'sending';
+  return (
+    <div className="aia-feedback" role="group" aria-label="검색 결과 평가">
+      <span>원하던 글인가요?</span>
+      <button type="button" aria-label="도움이 됐어요" disabled={sending} onClick={() => actions.vote(message, 'up')}>
+        👍
+      </button>
+      <button type="button" aria-label="도움이 안 됐어요" disabled={sending} onClick={() => actions.vote(message, 'down')}>
+        👎
+      </button>
+      {message.feedback === 'error' && <p className="aia-feedback-note">피드백을 보내지 못했어요. 다시 눌러 주세요.</p>}
+    </div>
+  );
+}
+
 function AssistantMessage({ message, actions }) {
   if (message.status === 'loading') {
     return (
@@ -80,6 +100,7 @@ function AssistantMessage({ message, actions }) {
   return (
     <>
       <CardsAnswer label={resultsLabel(message)} results={message.results} actions={actions} />
+      {message.results.length > 0 && <Feedback message={message} actions={actions} />}
       {message.hasMore && !message.moreRequested && (
         <button type="button" className="aia-more" onClick={() => actions.showMore(message)}>
           더 보기
@@ -91,7 +112,7 @@ function AssistantMessage({ message, actions }) {
 
 /**
  * @param {{ apiBase?: string, currentPostId?: number | null, search?: typeof searchBlog, docs?: typeof fetchDocs,
- *   recent?: typeof fetchRecent, similar?: typeof fetchSimilar }} props
+ *   recent?: typeof fetchRecent, similar?: typeof fetchSimilar, feedback?: typeof sendFeedback }} props
  */
 export function ChatWidget({
   apiBase = '',
@@ -100,6 +121,7 @@ export function ChatWidget({
   docs = fetchDocs,
   recent = fetchRecent,
   similar = fetchSimilar,
+  feedback = sendFeedback,
 }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -182,6 +204,16 @@ export function ChatWidget({
         postTitle: result.title,
         docs: await docs(apiBase, result.postId),
       }));
+    },
+    async vote(message, vote) {
+      const mark = (state) => setMessages((list) => list.map((m) => (m.id === message.id ? { ...m, feedback: state } : m)));
+      mark('sending');
+      try {
+        await feedback(apiBase, { query: message.query, vote, postIds: message.results.map((result) => result.postId) });
+        mark(vote);
+      } catch {
+        mark('error');
+      }
     },
     showMore(message) {
       setMessages((list) => list.map((m) => (m.id === message.id ? { ...m, moreRequested: true } : m)));
