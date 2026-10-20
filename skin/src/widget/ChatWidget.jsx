@@ -1,10 +1,20 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { MAX_QUERY_CHARS, fetchDocs, fetchRecent, fetchSimilar, searchBlog, sendFeedback } from './api.js';
+import {
+  MAX_QUERY_CHARS,
+  SearchError,
+  askBlog,
+  fetchDocs,
+  fetchRecent,
+  fetchSimilar,
+  isQuestion,
+  searchBlog,
+  sendFeedback,
+} from './api.js';
 import { ResultCard } from './ResultCard.jsx';
 
 const TITLE = '블로그 AI 도우미';
 const GREETING = '어떤 글을 찾고 있나요? 아래 예시를 눌러도 돼요.';
-const SUGGESTIONS = ['인덱스에 대한 글 찾아줘', '리액트 상태관리 글', '자바 카테고리 글 보여줘', '최근 글 보여줘'];
+const SUGGESTIONS = ['인덱스에 대한 글 찾아줘', 'Redux랑 Zustand 차이가 뭐야?', '자바 카테고리 글 보여줘', '최근 글 보여줘'];
 const NO_DOCS = '이 글과 연결된 공식 문서가 아직 없어요.';
 const FALLBACK_ERROR = '문제가 생겼어요. 잠시 후 다시 시도해 주세요.';
 
@@ -45,16 +55,17 @@ function DocsAnswer({ message }) {
   );
 }
 
-function CardsAnswer({ label, results, actions }) {
+function CardsAnswer({ label, results, actions, numbered = false }) {
   if (results.length === 0) return <p className="aia-bubble">{label}</p>;
   return (
     <div className="aia-answer">
-      <p className="aia-bubble">{label}</p>
+      {typeof label === 'string' ? <p className="aia-bubble">{label}</p> : label}
       <ul className="aia-cards">
-        {results.map((result) => (
+        {results.map((result, i) => (
           <ResultCard
             key={result.postId}
             result={result}
+            number={numbered ? i + 1 : undefined}
             onShowDocs={() => actions.showDocs(result)}
             docsRequested={actions.docsRequested.has(result.postId)}
           />
@@ -62,6 +73,31 @@ function CardsAnswer({ label, results, actions }) {
       </ul>
     </div>
   );
+}
+
+/** Answer text with each [n] turned into a link to source n (React escapes the text itself). */
+function AnswerText({ text, sources }) {
+  return text.split(/(\[\d+\])/).map((part, i) => {
+    const source = sources[Number(part.slice(1, -1)) - 1];
+    if (!/^\[\d+\]$/.test(part) || !source) return part;
+    return (
+      <a key={i} className="aia-cite" href={source.url} target="_blank" rel="noopener noreferrer" aria-label={`출처 ${part.slice(1, -1)}: ${source.title}`}>
+        {part}
+      </a>
+    );
+  });
+}
+
+function AiAnswer({ message, actions }) {
+  const label = (
+    <div className="aia-bubble aia-ai">
+      <p className="aia-ai-text">
+        <AnswerText text={message.answer} sources={message.results} />
+      </p>
+      <p className="aia-ai-note">AI가 블로그 글로 정리한 답이에요. 아래 원문도 확인해 주세요.</p>
+    </div>
+  );
+  return <CardsAnswer label={label} results={message.results} actions={actions} numbered />;
 }
 
 const THANKS = { up: '알려줘서 고마워요.', down: '알려줘서 고마워요. 검색을 고치는 데 쓸게요.' };
@@ -97,6 +133,14 @@ function AssistantMessage({ message, actions }) {
   if (message.status === 'error') return <p className="aia-bubble aia-error">{message.text}</p>;
   if (message.kind === 'docs') return <DocsAnswer message={message} />;
   if (message.kind === 'list') return <CardsAnswer label={message.label} results={message.results} actions={actions} />;
+  if (message.kind === 'answer') {
+    return (
+      <>
+        <AiAnswer message={message} actions={actions} />
+        <Feedback message={message} actions={actions} />
+      </>
+    );
+  }
   return (
     <>
       <CardsAnswer label={resultsLabel(message)} results={message.results} actions={actions} />
@@ -112,7 +156,7 @@ function AssistantMessage({ message, actions }) {
 
 /**
  * @param {{ apiBase?: string, currentPostId?: number | null, search?: typeof searchBlog, docs?: typeof fetchDocs,
- *   recent?: typeof fetchRecent, similar?: typeof fetchSimilar, feedback?: typeof sendFeedback }} props
+ *   recent?: typeof fetchRecent, similar?: typeof fetchSimilar, feedback?: typeof sendFeedback, answer?: typeof askBlog }} props
  */
 export function ChatWidget({
   apiBase = '',
@@ -122,6 +166,7 @@ export function ChatWidget({
   recent = fetchRecent,
   similar = fetchSimilar,
   feedback = sendFeedback,
+  answer = askBlog,
 }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -183,14 +228,28 @@ export function ChatWidget({
     if (event.key === 'Escape' && open) close();
   }
 
+  async function searchPage(query) {
+    return { kind: 'results', query, ...(await search(apiBase, query)) };
+  }
+
+  /** AI answer when the posts answer it; their cards when they don't; plain search when the answer service fails. */
+  async function answerOrSearch(query) {
+    let reply;
+    try {
+      reply = await answer(apiBase, query);
+    } catch (error) {
+      if (error instanceof SearchError && error.kind === 'rate') throw error;
+      return searchPage(query);
+    }
+    if (reply.answer) return { kind: 'answer', query, answer: reply.answer, results: reply.sources };
+    return { kind: 'results', query, mode: 'search', category: null, offset: 0, hasMore: false, results: reply.sources };
+  }
+
   async function ask(query) {
     if (!query || pending || !ready) return;
     setInput('');
     setPending(true);
-    await respond([{ id: newId(), role: 'user', text: query }], 'results', async () => ({
-      query,
-      ...(await search(apiBase, query)),
-    }));
+    await respond([{ id: newId(), role: 'user', text: query }], 'results', () => (isQuestion(query) ? answerOrSearch(query) : searchPage(query)));
     setPending(false);
     inputRef.current?.focus();
   }

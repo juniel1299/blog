@@ -4,12 +4,12 @@
 
 | 위협 | 대응 | 위치 |
 |---|---|---|
-| 공개 API 남용 / 무료 한도 소진 | IP당 분당 20회(Rate Limiting binding), 응답 10분 캐시, 질문 200자·본문 2KB 제한 | `api.js`, `wrangler.jsonc` |
+| 공개 API 남용 / 무료 한도 소진 | IP당 분당 20회(Rate Limiting binding, 답변 포함), 응답 10분 캐시, Workers AI 한도 소진 시 답변만 503 → 검색으로 대체, 질문 200자·본문 2KB 제한 | `api.js`, `wrangler.jsonc` |
 | 관리자 API 노출 | `Bearer ADMIN_TOKEN`, 길이 같을 때만 비교하는 상수 시간 비교, 토큰 없거나 32자 미만이면 기능 자체 꺼짐, 실패 시 401이 아닌 404로 존재를 숨김 | `admin.js` |
 | 내부 정보 노출 | 오류 응답은 코드+일반 메시지만. 스택/SQL/원인은 Worker 로그에만 | `http.js`, 각 핸들러 |
 | SQL 인젝션 | 모든 값 바인딩(`?`). FTS 검색어는 따옴표로 감싸 연산자 무력화, LIKE는 `%`/`_` 이스케이프 | `search.js`, `query.js` |
 | XSS | 위젯은 React 렌더링만(HTML 주입 없음). 목차는 `textContent`. 링크는 `http(s)`만 | `widget/`, `toc.js` |
-| 지어낸 링크 | 링크는 색인된 글 URL과 큐레이션 `doc_links`에서만 나옴. LLM이 링크를 만들지 않음 | [ADR 0002](adr/0002-docs-as-curated-links.md), [0004](adr/0004-extractive-preview.md) |
+| 지어낸 링크·내용 | 링크는 색인된 글 URL과 큐레이션 `doc_links`에서만 나옴. 답변 모드 LLM은 출처 번호만 쓰고, 없는 번호는 지움. 출처에 없으면 정해진 문장 → 답 대신 카드. 답 옆에 "AI가 정리한 답" 안내 | [ADR 0002](adr/0002-docs-as-curated-links.md), [0004](adr/0004-extractive-preview.md) |
 | CORS | `ALLOWED_ORIGINS`(블로그 도메인, 로컬 개발)만 헤더 부여. CORS는 브라우저 제한일 뿐 인증 수단이 아님 | `http.js` |
 | 수집기 오용 | 글 fetch는 `BLOG_ORIGIN`의 `/숫자` 글만. 관리자 preview도 숫자 id만 받아 블로그 주소로 조합 | `sitemap.js`, `admin.js` |
 | 사이트맵 장애로 전체 삭제 | 사이트맵이 비면 삭제하지 않음, 1회 삭제도 3개까지 | `sitemap.js` planSync |

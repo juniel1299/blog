@@ -1,7 +1,17 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { ChatWidget } from '../src/widget/ChatWidget.jsx';
-import { SearchError, fetchDocs, fetchRecent, fetchSimilar, isSafeUrl, searchBlog, sendFeedback } from '../src/widget/api.js';
+import {
+  SearchError,
+  askBlog,
+  fetchDocs,
+  fetchRecent,
+  fetchSimilar,
+  isQuestion,
+  isSafeUrl,
+  searchBlog,
+  sendFeedback,
+} from '../src/widget/api.js';
 import { currentPostId, mountWidget } from '../src/widget/mount.jsx';
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
@@ -211,6 +221,44 @@ describe('ChatWidget', () => {
     expect(screen.getByText('알려줘서 고마워요.')).toBeTruthy();
   });
 
+  test('a question gets an AI answer with numbered sources linked from its citations', async () => {
+    const search = vi.fn();
+    const answer = vi.fn(async () => ({
+      answer: '쓰기 작업이 느려져요 [1]. 디스크도 차지해요 [2].',
+      sources: [card(122, 'Index 란?', { cited: true }), card(119, 'Redux vs Zustand', { cited: false })],
+    }));
+    await openWith({ search, answer });
+    await ask('인덱스가 많으면 왜 안 좋아?');
+
+    expect(answer).toHaveBeenCalledWith(API, '인덱스가 많으면 왜 안 좋아?');
+    expect(search).not.toHaveBeenCalled();
+    const cite = screen.getByRole('link', { name: '출처 1: Index 란?' });
+    expect(cite.getAttribute('href')).toBe('https://blog/122');
+    expect(cite.getAttribute('target')).toBe('_blank');
+    expect(screen.getByText(/AI가 블로그 글로 정리한 답이에요/)).toBeTruthy();
+    expect(screen.getAllByRole('link', { name: /Index 란\? \(새 탭에서 열림\)/ })).toHaveLength(1);
+    expect(screen.getByRole('button', { name: '도움이 됐어요' })).toBeTruthy();
+  });
+
+  test('when the posts do not answer the question, their cards are shown instead', async () => {
+    const answer = vi.fn(async () => ({ answer: null, sources: [card(122, 'Index 란?')] }));
+    await openWith({ answer });
+    await ask('인덱스의 역사는?');
+    expect(screen.getByText('관련 글 1개를 찾았어요.')).toBeTruthy();
+    expect(screen.queryByText(/AI가 블로그 글로 정리한 답이에요/)).toBeNull();
+  });
+
+  test('if the answer service is down, the question falls back to search', async () => {
+    const answer = vi.fn(async () => {
+      throw new SearchError('server', 'x');
+    });
+    const search = vi.fn(async () => page([card(1, 'A')]));
+    await openWith({ answer, search });
+    await ask('useEffect는 언제 실행돼?');
+    expect(search).toHaveBeenCalledWith(API, 'useEffect는 언제 실행돼?');
+    expect(screen.getByText('관련 글 1개를 찾았어요.')).toBeTruthy();
+  });
+
   test('blank input is not sent', async () => {
     const search = vi.fn();
     await openWith({ search });
@@ -268,6 +316,38 @@ describe('api client', () => {
     const similarFetch = respond(200, { posts: [{ postId: 2, title: 's', url: 'javascript:x' }] });
     expect(await fetchSimilar(API, 98, { fetchImpl: similarFetch })).toEqual([]);
     expect(similarFetch.mock.calls[0][0]).toBe(`${API}/api/v1/posts/98/similar`);
+  });
+
+  test.each([
+    ['Redux랑 Zustand 차이가 뭐야?', true],
+    ['useEffect는 언제 실행돼', true],
+    ['인덱스 왜 쓰는지', true],
+    ['useEffect 어떻게 써', true],
+    ['인덱스에 대한 글 찾아줘', false],
+    ['자바 관련 글 알려줘', false],
+    ['자바 카테고리 글 보여줘', false],
+    ['최근 글 보여줘', false],
+    ['react', false],
+  ])('isQuestion(%s) = %s', (text, expected) => {
+    expect(isQuestion(text)).toBe(expected);
+  });
+
+  test('askBlog posts the question; an unsafe source drops it and the answer, since citation numbers would shift', async () => {
+    const fetchImpl = respond(200, {
+      answer: 'a [1]',
+      sources: [
+        { postId: 1, title: 'ok', url: 'https://blog/1', cited: true },
+        { postId: 2, title: 'bad', url: 'javascript:x' },
+      ],
+    });
+    const result = await askBlog(API, 'q?', { fetchImpl });
+    expect(result.answer).toBeNull();
+    expect(result.sources.map((s) => s.postId)).toEqual([1]);
+    expect(fetchImpl.mock.calls[0][0]).toBe(`${API}/api/v1/answer`);
+    expect(JSON.parse(fetchImpl.mock.calls[0][1].body)).toEqual({ query: 'q?' });
+
+    const clean = await askBlog(API, 'q?', { fetchImpl: respond(200, { answer: 'a [1]', sources: [{ postId: 1, title: 'ok', url: 'https://blog/1' }] }) });
+    expect(clean.answer).toBe('a [1]');
   });
 
   test('sendFeedback posts the vote', async () => {

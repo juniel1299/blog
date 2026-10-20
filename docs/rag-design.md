@@ -95,6 +95,18 @@ RRF(k=60)로 세 목록을 합치고 **글당 가장 좋은 청크 1개**만 남
 
 위젯은 글 본문 페이지(`body#tt-body-page`, 경로 `/123`)에서 열리면 비슷한 글을, 아니면 최근 글을 먼저 보여준다. 비슷한 글이 없으면 최근 글로 대체.
 
+## 답변 모드 (`answer.js`)
+
+질문형 입력("…뭐야?", "왜…", "…차이", "어떻게…")은 `POST /api/v1/answer`로 간다. "…글 찾아줘", 카테고리, 최근 글 요청은 검색 그대로 (위젯 `isQuestion`).
+
+1. 하이브리드 검색으로 상위 3개 글
+2. 글마다 일치한 소제목 청크부터 순서대로 1,500자까지 → `[출처 n] 제목\n본문`
+3. Workers AI `@cf/google/gemma-4-26b-a4b-it`(생각 끔): 출처만 근거로 2~4문장, 문장 끝에 `[n]`, 답이 없으면 정해진 문장
+4. 없는 번호의 `[n]`은 지우고, 인용된 출처에 `cited: true`
+5. 위젯: `[n]`은 출처 글 링크(새 탭), 아래 번호 붙은 출처 카드, 👍/👎. 답이 없으면 출처 카드만, 서비스 실패면 일반 검색
+
+모델 선택 근거와 비교: [ADR 0008](adr/0008-answer-mode-workers-ai.md). 1회 ≈ 15 neurons, 응답 10분 캐시.
+
 ## 관련 공식 문서 매칭 (`docs.js`)
 
 큐레이션 링크(`worker/seed/doc_links.sql`, 52개: Java/Spring/Oracle/HTML·CSS/JS/React/Web + Next.js/MCP·Claude Code/OpenCV)만 쓴다 ([ADR 0002](adr/0002-docs-as-curated-links.md)).

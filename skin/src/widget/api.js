@@ -97,3 +97,28 @@ export async function sendFeedback(apiBase, feedback, { fetchImpl = fetch } = {}
     fetchImpl,
   );
 }
+
+const SEARCH_WORDS = /글|포스트|게시물|카테고리|최근|찾아/;
+const QUESTION_WORDS = /[?？]|왜|어떻게|무엇|뭐야|뭔가|뭐예요|뭐지|뭘까|차이|이란|란\s*$|언제|설명|알려\s*줘|어때/;
+
+/** Questions about a topic go to answer mode; requests for posts ("…글 찾아줘") stay plain search. */
+export const isQuestion = (text) => !SEARCH_WORDS.test(text) && QUESTION_WORDS.test(text);
+
+/**
+ * Grounded answer from the blog's posts. `answer` is null when the posts don't answer it; sources are cards
+ * numbered for the answer's [n] citations.
+ * @returns {Promise<{ answer: string | null, sources: { postId: number, title: string, url: string, category: string | null,
+ *   preview: string, cited?: boolean }[] }>}
+ */
+export async function askBlog(apiBase, query, { fetchImpl = fetch } = {}) {
+  const body = await requestJson(
+    apiUrl(apiBase, '/api/v1/answer'),
+    { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query }) },
+    fetchImpl,
+  );
+  if (!Array.isArray(body.sources)) throw new SearchError('server', '답변을 읽지 못했어요.');
+  const sources = safeCards(body.sources);
+  // [n] points at the n-th source, so a dropped source would mislabel citations: show cards only.
+  const answer = typeof body.answer === 'string' && sources.length === body.sources.length ? body.answer : null;
+  return { answer, sources };
+}

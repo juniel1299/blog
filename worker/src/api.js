@@ -1,3 +1,4 @@
+import { answerQuestion } from './answer.js';
 import { relatedDocs } from './docs.js';
 import { readFeedback, recordFeedback } from './feedback.js';
 import { errorBody, json } from './http.js';
@@ -13,11 +14,12 @@ const PUBLIC_CACHE = { 'cache-control': `public, max-age=${CACHE_SECONDS}` };
 const SEARCH_PATH = '/api/v1/search';
 const RECENT_PATH = '/api/v1/posts/recent';
 const FEEDBACK_PATH = '/api/v1/feedback';
-const POST_METHOD_PATHS = new Set([SEARCH_PATH, FEEDBACK_PATH]);
+const ANSWER_PATH = '/api/v1/answer';
+const POST_METHOD_PATHS = new Set([SEARCH_PATH, FEEDBACK_PATH, ANSWER_PATH]);
 const POST_PATH = /^\/api\/v1\/posts\/(\d{1,9})\/(docs|similar|series)$/;
 
-function cacheKey(normalized) {
-  return new Request(`https://search-cache.internal/v2?q=${encodeURIComponent(normalized)}`);
+function cacheKey(normalized, kind = 'v2') {
+  return new Request(`https://search-cache.internal/${kind}?q=${encodeURIComponent(normalized)}`);
 }
 
 /**
@@ -78,6 +80,26 @@ async function handleSearch(request, env, ctx, requestId, headers) {
   }
 }
 
+/** Grounded answer for a question; 503 when the model is unavailable so the widget falls back to search. */
+async function handleAnswer(request, env, ctx, requestId, headers) {
+  const input = await readSearchBody(request);
+  if (!input) return json(errorBody('INVALID_QUERY', `query는 1~${MAX_QUERY_CHARS}자 문자열이어야 합니다.`, requestId), 400, headers);
+  const cache = globalThis.caches?.default;
+  const key = cacheKey(normalizeQuery(input.query), 'answer-v1');
+  try {
+    let body = await (await cache?.match(key))?.json();
+    if (!body) {
+      body = await answerQuestion(env, input.query);
+      ctx?.waitUntil(cache?.put(key, new Response(JSON.stringify(body), { headers: { 'cache-control': `max-age=${CACHE_SECONDS}` } })));
+    }
+    return json({ query: input.query, ...body, requestId }, 200, headers);
+  } catch (error) {
+    // Includes Workers AI's daily free allocation running out.
+    console.error(JSON.stringify({ requestId, event: 'answer_failed', error: String(error) }));
+    return json(errorBody('ANSWER_UNAVAILABLE', '지금은 답변을 만들 수 없어요. 검색 결과로 보여드릴게요.', requestId), 503, headers);
+  }
+}
+
 async function handlePost(env, postId, kind, requestId, headers) {
   try {
     if (kind === 'docs') {
@@ -130,6 +152,7 @@ async function handleRecent(env, requestId, headers) {
  *   GET  /api/v1/posts/:postId/similar  -> { postId, posts }
  *   GET  /api/v1/posts/:postId/series   -> { postId, series }
  *   POST /api/v1/feedback               -> { ok }
+ *   POST /api/v1/answer                 -> { query, answer, sources }
  * Returns null for other paths so the main router can continue.
  */
 export async function handleApi(request, env, ctx, { pathname }, requestId, headers) {
@@ -149,5 +172,6 @@ export async function handleApi(request, env, ctx, { pathname }, requestId, head
   if (postMatch) return handlePost(env, Number(postMatch[1]), postMatch[2], requestId, headers);
   if (pathname === RECENT_PATH) return handleRecent(env, requestId, headers);
   if (pathname === FEEDBACK_PATH) return handleFeedback(request, env, requestId, headers);
+  if (pathname === ANSWER_PATH) return handleAnswer(request, env, ctx, requestId, headers);
   return handleSearch(request, env, ctx, requestId, headers);
 }
