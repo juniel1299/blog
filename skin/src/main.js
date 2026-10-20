@@ -1,5 +1,6 @@
 import './styles/main.css';
 import { initCodeBlocks } from './scripts/code-blocks.js';
+import { initHeaderSearch } from './scripts/header-search.js';
 import { initPostMeta } from './scripts/post-meta.js';
 import { initReadProgress } from './scripts/read-progress.js';
 import { initSeries } from './scripts/series.js';
@@ -17,7 +18,9 @@ function start() {
   initCodeBlocks(article);
   initPostMeta(document.querySelector('.post-meta'), article);
   const assistant = document.getElementById('ai-assistant');
-  initSeries(document.querySelector('.post-header'), assistant?.dataset.apiBase ?? '', currentPostId(window.location, document.body.id));
+  const apiBase = assistant?.dataset.apiBase ?? '';
+  initHeaderSearch(document.getElementById('search-input'), apiBase);
+  initSeries(document.querySelector('.post-header'), apiBase, currentPostId(window.location, document.body.id));
   mountWidget(assistant);
 }
 

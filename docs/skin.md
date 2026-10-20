@@ -21,7 +21,7 @@ Vite 라이브러리 모드(IIFE, 고정 파일명). 티스토리는 스킨 파�
 
 | 영역 | 치환자 / 블록 | 비고 |
 |---|---|---|
-| 헤더 | `[##_title_##]`, `[##_blog_menu_##]`, `<s_search>` | 검색은 `[##_search_onclick_submit_##]` |
+| 헤더 | `[##_title_##]`, `[##_blog_menu_##]`, `<s_search>` | 검색은 `[##_search_onclick_submit_##]`. 스크립트가 입력창에 하이브리드 검색 미리보기(2자 이상, 300ms 디바운스, 상위 3개)를 붙이고, 고른 결과가 없을 때 Enter는 티스토리 기본 검색 그대로 |
 | 홈 히어로 | `[##_image_##]`, `[##_desc_##]` | `#tt-body-index`에서만 표시 |
 | 목록 | `<s_list>`, `<s_list_rep>`, `<s_list_rep_thumbnail>` | 댓글 수는 0일 때 빈 값 → CSS `:empty`로 숨김 |
 | 홈 카드 | `<s_index_article_rep>`, `<s_article_rep_thumbnail>` | |

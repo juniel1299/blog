@@ -28,6 +28,21 @@ const POSTS = {
     tags: ['javascript', 'react', '리액트', '웹개발', '자바스크립트', '프론트엔드'],
   },
   cors: { title: '[WEB] CORS 에러란 ? ..', category: 'CS + WEB', tags: ['CORS', 'origin', 'web', '백엔드', '프론트엔드'] },
+  nextRouter: {
+    title: '[Next.js] Page Router vs App Router (ft. 리모델링)',
+    category: 'JavaScript/Next.js',
+    tags: ['App router', 'next.js', 'page router', 'react', '넥스트js', '리액트', '서버 컴포넌트', '프론트엔드'],
+  },
+  mcp: {
+    title: 'MCP (Model Context Protocol)',
+    category: 'AI',
+    tags: ['AI', 'claude', 'claude code', 'MCP', 'model context protocol', '에이전트', '인공지능', '클로드'],
+  },
+  opencv: {
+    title: '[캡스톤디자인] OPENCV - 3 (모라벡의 역설)',
+    category: '프로젝트/캡스톤디자인(졸업작품)',
+    tags: ['Capstone', 'opencv', '졸업작품', '졸작', '캡스톤', '캡스톤디자인'],
+  },
   diary: { title: '첫 입사 일주일 (ft.네가 하이닉스고 얘가 현대야)', category: '다양한 이야기/나의 코딩 관련 이야기', tags: ['SI', 'SM', '개발자', '일상', '회고'] },
 };
 
@@ -35,7 +50,7 @@ const titles = (post) => matchDocs(post, DOCS).map((doc) => doc.title);
 
 describe('matchDocs (real seed)', () => {
   test('seed parsed', () => {
-    expect(DOCS).toHaveLength(41);
+    expect(DOCS).toHaveLength(52);
   });
 
   test('map/forEach post gets the specific docs, not generic React pages', () => {
@@ -52,6 +67,20 @@ describe('matchDocs (real seed)', () => {
 
   test('CORS post gets CORS doc first', () => {
     expect(titles(POSTS.cors)[0]).toBe('CORS (MDN)');
+  });
+
+  test('Next.js router post gets the router docs, not generic React pages', () => {
+    expect(titles(POSTS.nextRouter)).toEqual(expect.arrayContaining(['App Router (Next.js)', 'Pages Router (Next.js)']));
+    expect(titles(POSTS.nextRouter).every((title) => title.includes('Next.js'))).toBe(true);
+  });
+
+  test('MCP post gets MCP docs first and the Claude Code MCP guide', () => {
+    expect(titles(POSTS.mcp)[0]).toBe('MCP 소개 (Model Context Protocol)');
+    expect(titles(POSTS.mcp)).toContain('Claude Code에서 MCP 연결하기');
+  });
+
+  test('capstone OpenCV post gets OpenCV docs', () => {
+    expect(titles(POSTS.opencv)[0]).toMatch(/^OpenCV/);
   });
 
   test('non-technical post gets nothing rather than noise', () => {
