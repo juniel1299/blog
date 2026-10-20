@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { ChatWidget } from '../src/widget/ChatWidget.jsx';
-import { SearchError, fetchDocs, fetchRecent, fetchSimilar, isSafeUrl, searchBlog } from '../src/widget/api.js';
+import { SearchError, fetchDocs, fetchRecent, fetchSimilar, isSafeUrl, searchBlog, sendFeedback } from '../src/widget/api.js';
 import { currentPostId, mountWidget } from '../src/widget/mount.jsx';
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
@@ -177,6 +177,40 @@ describe('ChatWidget', () => {
     expect(screen.getByText('이 글과 연결된 공식 문서가 아직 없어요.')).toBeTruthy();
   });
 
+  test('👍/👎 sends the question, vote and shown posts once, then thanks', async () => {
+    const feedback = vi.fn(async () => {});
+    await openWith({ search: async () => page([card(1, 'A'), card(2, 'B')]), feedback });
+    await ask('리액트 상태관리');
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '도움이 안 됐어요' }));
+    });
+    expect(feedback).toHaveBeenCalledWith(API, { query: '리액트 상태관리', vote: 'down', postIds: [1, 2] });
+    expect(screen.getByText('알려줘서 고마워요. 검색을 고치는 데 쓸게요.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: '도움이 됐어요' })).toBeNull();
+  });
+
+  test('no feedback buttons on empty results or the opening list', async () => {
+    await openWith({ recent: async () => [card(9, 'R')], search: async () => page([]) });
+    await ask('없는 주제');
+    expect(screen.queryByRole('button', { name: '도움이 됐어요' })).toBeNull();
+  });
+
+  test('a failed feedback send says so and allows a retry', async () => {
+    const feedback = vi.fn().mockRejectedValueOnce(new SearchError('network', 'x')).mockResolvedValueOnce();
+    await openWith({ search: async () => page([card(1, 'A')]), feedback });
+    await ask('q');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '도움이 됐어요' }));
+    });
+    expect(screen.getByText('피드백을 보내지 못했어요. 다시 눌러 주세요.')).toBeTruthy();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '도움이 됐어요' }));
+    });
+    expect(feedback).toHaveBeenCalledTimes(2);
+    expect(screen.getByText('알려줘서 고마워요.')).toBeTruthy();
+  });
+
   test('blank input is not sent', async () => {
     const search = vi.fn();
     await openWith({ search });
@@ -234,6 +268,15 @@ describe('api client', () => {
     const similarFetch = respond(200, { posts: [{ postId: 2, title: 's', url: 'javascript:x' }] });
     expect(await fetchSimilar(API, 98, { fetchImpl: similarFetch })).toEqual([]);
     expect(similarFetch.mock.calls[0][0]).toBe(`${API}/api/v1/posts/98/similar`);
+  });
+
+  test('sendFeedback posts the vote', async () => {
+    const fetchImpl = respond(200, { ok: true });
+    await sendFeedback(API, { query: 'q', vote: 'up', postIds: [1] }, { fetchImpl });
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe(`${API}/api/v1/feedback`);
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body)).toEqual({ query: 'q', vote: 'up', postIds: [1] });
   });
 
   test('isSafeUrl only allows http(s)', () => {

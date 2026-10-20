@@ -1,9 +1,10 @@
 import { relatedDocs } from './docs.js';
+import { readFeedback, recordFeedback } from './feedback.js';
 import { errorBody, json } from './http.js';
 import { recordMiss } from './misses.js';
 import { recentPosts, seriesPosts, similarPosts } from './posts.js';
 import { extractCategory, isRecentRequest } from './search/intent.js';
-import { MAX_QUERY_CHARS } from './search/query.js';
+import { MAX_QUERY_CHARS, normalizeQuery } from './search/query.js';
 import { RESULT_LIMIT, RESULT_POOL, searchPosts } from './search/search.js';
 
 const MAX_BODY_BYTES = 2048;
@@ -11,9 +12,9 @@ const CACHE_SECONDS = 600;
 const PUBLIC_CACHE = { 'cache-control': `public, max-age=${CACHE_SECONDS}` };
 const SEARCH_PATH = '/api/v1/search';
 const RECENT_PATH = '/api/v1/posts/recent';
+const FEEDBACK_PATH = '/api/v1/feedback';
+const POST_METHOD_PATHS = new Set([SEARCH_PATH, FEEDBACK_PATH]);
 const POST_PATH = /^\/api\/v1\/posts\/(\d{1,9})\/(docs|similar|series)$/;
-
-const normalizeQuery = (query) => query.toLowerCase().replace(/\s+/g, ' ').trim();
 
 function cacheKey(normalized) {
   return new Request(`https://search-cache.internal/v2?q=${encodeURIComponent(normalized)}`);
@@ -98,6 +99,20 @@ async function handlePost(env, postId, kind, requestId, headers) {
   }
 }
 
+async function handleFeedback(request, env, requestId, headers) {
+  const feedback = await readFeedback(request);
+  if (!feedback) {
+    return json(errorBody('INVALID_FEEDBACK', 'query, vote(up|down), postIds(1~3개 글 번호)가 필요합니다.', requestId), 400, headers);
+  }
+  try {
+    await recordFeedback(env, feedback);
+    return json({ ok: true, requestId }, 200, headers);
+  } catch (error) {
+    console.error(JSON.stringify({ requestId, event: 'feedback_failed', error: String(error) }));
+    return json(errorBody('FEEDBACK_FAILED', '피드백을 저장하지 못했어요.', requestId), 500, headers);
+  }
+}
+
 async function handleRecent(env, requestId, headers) {
   try {
     return json({ posts: await recentPosts(env, { limit: RESULT_LIMIT }), requestId }, 200, { ...headers, ...PUBLIC_CACHE });
@@ -113,12 +128,14 @@ async function handleRecent(env, requestId, headers) {
  *   GET  /api/v1/posts/recent           -> { posts }
  *   GET  /api/v1/posts/:postId/docs     -> { postId, docs }
  *   GET  /api/v1/posts/:postId/similar  -> { postId, posts }
+ *   GET  /api/v1/posts/:postId/series   -> { postId, series }
+ *   POST /api/v1/feedback               -> { ok }
  * Returns null for other paths so the main router can continue.
  */
 export async function handleApi(request, env, ctx, { pathname }, requestId, headers) {
   const postMatch = pathname.match(POST_PATH);
-  if (pathname !== SEARCH_PATH && pathname !== RECENT_PATH && !postMatch) return null;
-  const method = pathname === SEARCH_PATH ? 'POST' : 'GET';
+  if (!POST_METHOD_PATHS.has(pathname) && pathname !== RECENT_PATH && !postMatch) return null;
+  const method = POST_METHOD_PATHS.has(pathname) ? 'POST' : 'GET';
   if (request.method !== method) {
     return json(errorBody('METHOD_NOT_ALLOWED', `Use ${method}`, requestId), 405, { ...headers, allow: method });
   }
@@ -131,5 +148,6 @@ export async function handleApi(request, env, ctx, { pathname }, requestId, head
 
   if (postMatch) return handlePost(env, Number(postMatch[1]), postMatch[2], requestId, headers);
   if (pathname === RECENT_PATH) return handleRecent(env, requestId, headers);
+  if (pathname === FEEDBACK_PATH) return handleFeedback(request, env, requestId, headers);
   return handleSearch(request, env, ctx, requestId, headers);
 }

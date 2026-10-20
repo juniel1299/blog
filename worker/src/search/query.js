@@ -1,4 +1,7 @@
 export const MAX_QUERY_CHARS = 200;
+
+/** Cache/log key for a question: lowercased, spaces collapsed. */
+export const normalizeQuery = (query) => query.toLowerCase().replace(/\s+/g, ' ').trim();
 const TRIGRAM_MIN = 3; // FTS5 trigram can only match terms of 3+ characters
 const MAX_TERMS = 8;
 

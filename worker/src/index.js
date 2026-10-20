@@ -2,6 +2,7 @@ import { handleAdmin } from './admin.js';
 import { handleApi } from './api.js';
 import { corsHeaders, errorBody, json } from './http.js';
 import { runIngest } from './ingest/run.js';
+import { purgeOldFeedback } from './feedback.js';
 import { purgeOldMisses } from './misses.js';
 
 async function checkReady(env, requestId) {
@@ -42,7 +43,7 @@ export default {
     return json(errorBody('NOT_FOUND', 'Not found', requestId), 404, headers);
   },
 
-  /** Cron trigger: one incremental sync pass (see docs/architecture.md, 수집) + miss-log retention. */
+  /** Cron trigger: one incremental sync pass (see docs/architecture.md, 수집) + miss/feedback log retention. */
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(
       runIngest(env).then(
@@ -53,6 +54,11 @@ export default {
     ctx.waitUntil(
       purgeOldMisses(env).catch((error) =>
         console.error(JSON.stringify({ event: 'purge_misses_failed', error: String(error) })),
+      ),
+    );
+    ctx.waitUntil(
+      purgeOldFeedback(env).catch((error) =>
+        console.error(JSON.stringify({ event: 'purge_feedback_failed', error: String(error) })),
       ),
     );
   },
