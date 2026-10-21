@@ -298,15 +298,15 @@
           </section>
         </s_sidebar_element>
       </s_sidebar>
-      <!-- 사이드광고1 -->
+      <!-- 사이드광고1 (post pages hide the sidebar: push only when visible, else AdSense errors on width 0) -->
       <div class="ad ad-side">
         <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-4884664384381875" data-ad-slot="9729513722" data-ad-format="auto" data-full-width-responsive="true"></ins>
-        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        <script>if (document.currentScript.parentElement.offsetParent) (adsbygoogle = window.adsbygoogle || []).push({});</script>
       </div>
       <!-- 사이드광고2: follows the scroll -->
       <div class="ad ad-side ad-side-sticky">
         <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-4884664384381875" data-ad-slot="1625477204" data-ad-format="auto" data-full-width-responsive="true"></ins>
-        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        <script>if (document.currentScript.parentElement.offsetParent) (adsbygoogle = window.adsbygoogle || []).push({});</script>
       </div>
     </aside>
   </div>
