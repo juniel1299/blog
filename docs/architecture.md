@@ -33,7 +33,8 @@
 | 스킨 | `skin/tistory/skin.html`, `skin/src/styles/` | 티스토리 치환자 템플릿 + 디자인. 빌드 시 그대로 복사 ([skin.md](skin.md)) |
 | 스킨 스크립트 | `skin/src/scripts/` | 테마 전환, 목차, 맨 위로, 읽기 진행바 |
 | 챗봇 위젯 | `skin/src/widget/` | React 19. `#ai-assistant`에 한 번만 마운트, `data-api-base`로 API 주소 받음 |
-| 공개 API | `worker/src/api.js` | 검색, 최근 글, 비슷한 글, 관련 문서 ([api-contract.md](api-contract.md)) |
+| 공개 API | `worker/src/api.js` | 검색, 답변, 최근 글, 비슷한 글, 시리즈, 관련 문서, 피드백 ([api-contract.md](api-contract.md)) |
+| 답변 모드 | `worker/src/answer.js` | 검색 상위 3개 글을 근거로 Workers AI가 출처 번호 붙은 짧은 답 ([ADR 0008](adr/0008-answer-mode-workers-ai.md)) |
 | 검색 | `worker/src/search/` | 질문 해석, 키워드+의미 검색, RRF, 미리보기 ([rag-design.md](rag-design.md)) |
 | 목록/추천 | `worker/src/posts.js` | 최근 글, 비슷한 글, 카드 생성 |
 | 관련 문서 | `worker/src/docs.js` | 큐레이션 링크와 글 태그/카테고리/제목 매칭 |
@@ -50,6 +51,8 @@
 1. 위젯이 `POST /api/v1/search {query, offset}`
 2. Worker: 의도 판단(최근 글 / 카테고리 범위 / 일반 검색) → 결과 6개까지 계산해 캐시 → 3개씩 응답
 3. 위젯: 한 줄 미리보기 + 제목(새 탭) + [관련 문서] 카드, 남으면 [더 보기]
+
+**질문 → 답변**: 질문형 입력이면 `POST /api/v1/answer` → 검색 상위 3개 글 + Workers AI → 출처 `[n]`이 붙은 2~4문장 + 출처 카드. 답이 없으면 카드만, 실패하면 일반 검색
 
 **관련 문서**: 카드의 버튼 → `GET /api/v1/posts/:id/docs` → 큐레이션 링크 최대 3개 (LLM이 만든 링크 없음)
 
@@ -68,3 +71,4 @@
 | [0005](adr/0005-hybrid-search-thresholds.md) | 하이브리드 검색 + 실데이터로 맞춘 임계값 |
 | [0006](adr/0006-skin-in-place-edit.md) | 스킨은 기존 스킨을 보관 후 편집 화면에서 교체 |
 | [0007](adr/0007-ci-auto-deploy.md) | Worker는 main 머지 시 자동 배포, 스킨은 수동 |
+| [0008](adr/0008-answer-mode-workers-ai.md) | Q&A 답변 모드는 Workers AI Gemma 4 (생각 끔), 실패 시 검색 |

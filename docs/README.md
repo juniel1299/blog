@@ -11,4 +11,4 @@
 | [operations.md](operations.md) | CI/CD, 비밀값, 작업별 절차, 비용 | 운영, 장애, 배포 |
 | [security.md](security.md) | 위협과 대응, 비밀값, 개인정보 | 보안 점검 |
 | [history.md](history.md) | 단계별 개발 이력, 겪은 문제 | 왜 이렇게 됐는지 |
-| [adr/](adr/) | 결정 기록 0001~0007 | 결정을 바꾸려 할 때 |
+| [adr/](adr/) | 결정 기록 0001~0008 | 결정을 바꾸려 할 때 |

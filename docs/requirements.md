@@ -33,6 +33,7 @@
 | A4 | Worker 자동 배포 | ✅ | `main` 머지 → GitHub Actions 배포 ([operations.md](operations.md)) |
 | A5 | 검색 품질 측정 + 0건 질문 로그 | ✅ | `npm run eval:search`, `GET /admin/misses` |
 | A6 | 더 보기 / 카테고리 범위 검색 / 최근 글·예시 질문 / 현재 글 기준 추천 | ✅ | [rag-design.md](rag-design.md#대화-기능) |
+| A7 | 2차: 코드 복사, 읽기 시간, 시리즈, 헤더 하이브리드 검색, 공식 문서 확장, 👍/👎, Q&A 답변 모드 | ✅ | [rag-design.md](rag-design.md#답변-모드-answerjs), [ADR 0008](adr/0008-answer-mode-workers-ai.md) |
 
 ## 범위 밖 / 남은 것
 

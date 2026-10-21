@@ -1,6 +1,6 @@
 # API Contract
 
-구현된 것: `GET /health/live`, `GET /health/ready`, `POST /api/v1/search`, `GET /api/v1/posts/recent`, `GET /api/v1/posts/:postId/similar`, `GET /api/v1/posts/:postId/docs`, `GET /api/v1/posts/:postId/series`, `POST /api/v1/feedback`, 관리자 API(`/admin/*`). 공개 API는 모두 같은 IP 제한(분당 20회)을 쓴다.
+구현된 것: `GET /health/live`, `GET /health/ready`, `POST /api/v1/search`, `GET /api/v1/posts/recent`, `GET /api/v1/posts/:postId/similar`, `GET /api/v1/posts/:postId/docs`, `GET /api/v1/posts/:postId/series`, `POST /api/v1/feedback`, `POST /api/v1/answer`, 관리자 API(`/admin/*`). 공개 API는 모두 같은 IP 제한(분당 20회)을 쓴다.
 
 ## 공통
 
@@ -89,6 +89,23 @@
 ### `GET /api/v1/posts/:postId/series`
 
 `{ "postId", "series": { "name", "posts": [{ postId, title, url }] } | null, "requestId" }`: 제목이 `[이름] 7. …` 또는 `[이름] … - 2` 형식인 글의 시리즈(같은 이름, 회차 순, 2편 이상). 시리즈가 아니면 `series: null`, 색인되지 않은 글 404 `POST_NOT_FOUND`. 스킨이 글 머리 아래 시리즈 상자에 쓴다.
+
+### `POST /api/v1/answer`
+
+```json
+// POST /api/v1/answer {"query": "Redux랑 Zustand 차이가 뭐야?"} -> 200
+{
+  "query": "Redux랑 Zustand 차이가 뭐야?",
+  "answer": "Redux는 구조적이고 … [1]. 반면 Zustand는 … [1].",
+  "sources": [{ "postId": 119, "title": "…", "url": "https://…/119", "category": "JavaScript/React", "heading": "…", "preview": "…", "cited": true }],
+  "requestId": "..."
+}
+```
+
+- `answer`의 `[n]`은 `sources[n-1]`. 출처는 검색 상위 3개 글 (카드 형식 + `cited`)
+- 맞는 글이 없으면 `answer: null, sources: []`, 글은 있지만 답이 안 되면 `answer: null` + sources
+- 본문 검증은 search와 같음(400 `INVALID_QUERY`). 모델 실패·무료 한도 소진 503 `ANSWER_UNAVAILABLE` → 위젯은 검색으로 대체
+- 같은 IP 제한, 정규화한 질문 기준 10분 캐시
 
 ### `POST /api/v1/feedback`
 

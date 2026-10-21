@@ -476,6 +476,11 @@ a.chip:hover { text-decoration: none; filter: brightness(1.05); }
 }
 .aia-card:hover { border-color: var(--accent); }
 .aia-card-chip { font-size: 0.7rem; font-weight: 700; color: var(--accent); }
+.aia-card-num { margin-right: 6px; font-size: 0.7rem; font-weight: 700; color: var(--muted); }
+.aia-ai { border-color: var(--accent); }
+.aia-ai-text { margin: 0; }
+.aia-ai-note { margin: 6px 0 0; color: var(--muted); font-size: 0.75rem; }
+.aia-cite { margin-left: 1px; font-size: 0.75rem; font-weight: 700; vertical-align: super; color: var(--accent); }
 .aia-card-preview { margin: 4px 0 8px; font-size: 0.85rem; line-height: 1.55; color: var(--text-2); }
 .aia-card-link { display: block; font-size: 0.9rem; font-weight: 700; line-height: 1.45; color: var(--text); }
 .aia-card-link:hover { color: var(--accent); text-decoration: none; }
