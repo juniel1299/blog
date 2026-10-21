@@ -38,4 +38,12 @@ describe('tistory build output', () => {
     expect(built).toContain('href="./style.css"');
     expect(built).toContain('src="./images/script.js"');
   });
+
+  test('every AdSense unit is placed exactly once with the blog client', async () => {
+    const built = await readFile(path.join(outDir, 'skin.html'), 'utf8');
+    const slots = [...built.matchAll(/data-ad-slot="(\d+)"/g)].map((m) => m[1]).sort();
+    expect(slots).toEqual(['1625477204', '6278711115', '8737680469', '9621702512', '9729513722']);
+    expect(built.match(/data-ad-client="ca-pub-4884664384381875"/g)).toHaveLength(5);
+    expect(built.match(/adsbygoogle = window\.adsbygoogle \|\| \[\]\)\.push\(\{\}\)/g)).toHaveLength(5);
+  });
 });

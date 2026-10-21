@@ -28,7 +28,7 @@
 | # | 요구사항 | 상태 | 구현 |
 |---|---|---|---|
 | A1 | 스킨 디자인 보강 | ✅ | 히어로, 카드 목록, 읽기 진행바, 이전/다음 글, 카테고리 다른 글, 사이드바 위젯 |
-| A2 | 기존 스킨의 애드센스/네이버 인증 유지 | ✅ (일부) | 애드센스 로더, 네이버 사이트 인증 유지. 기존 스킨의 수동 광고 슬롯은 새 레이아웃에 없음 |
+| A2 | 기존 스킨의 애드센스/네이버 인증 유지 | ✅ | 애드센스 로더, 네이버 사이트 인증, 수동 광고 단위 5개 (2차에서 복구, [skin.md](skin.md)) |
 | A3 | GitHub 업로드 | ✅ | https://github.com/juniel1299/blog (public) |
 | A4 | Worker 자동 배포 | ✅ | `main` 머지 → GitHub Actions 배포 ([operations.md](operations.md)) |
 | A5 | 검색 품질 측정 + 0건 질문 로그 | ✅ | `npm run eval:search`, `GET /admin/misses` |
