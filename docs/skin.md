@@ -50,6 +50,7 @@ Vite 라이브러리 모드(IIFE, 고정 파일명). 티스토리는 스킨 파�
 - **댓글**: 이 블로그는 `[##_comment_group_##]`만 두면 빈 값이 나온다. 레거시 `<s_rp_container>` 등이 함께 있어야
   새 댓글 앱(`data-tistory-react-app="Comment"`)이 렌더링된다. 새 앱이 뜨면 CSS로 레거시 블록을 숨긴다.
 - **댓글 다크 모드**: 티스토리 댓글 앱은 라이트 색상 고정 → `.tt-link-user`, `.tt_desc`, `.tt_date` 색을 토큰으로 덮어씀
+- **방문자용 티스토리 툴바**(`.menu_toolbar`, 블로그 이름 + 구독하기): 티스토리가 `top:20px; right:20px`에 고정해 헤더 검색창을 가렸다 → `top: 77px`(헤더 65px 아래)로 내리고, 툴바가 있을 때만(`body:has(.menu_toolbar)`) 목차 sticky 위치를 120px로. 로그인한 주인에게는 툴바가 안 나오고, 폭 900px 이하에서는 티스토리가 스스로 숨긴다.
 - **본문에 끼워 넣는 요소**: 광고 스크립트, 공감/공유 버튼(`.container_postbtn`), "카테고리의 다른 글"(`.another_category`).
   수집기는 이것들을 빼고 본문만 색인한다
 - **스킨 편집기**: Monaco 에디터. 탭(HTML/CSS)을 바꾸면 모델이 새로 만들어진다
