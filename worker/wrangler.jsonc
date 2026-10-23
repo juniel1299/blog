@@ -30,5 +30,6 @@
     { "name": "EVENTS_LIMITER", "namespace_id": "1002", "simple": { "limit": 60, "period": 60 } }
   ],
   // Incremental sync: each run re-indexes at most 3 changed posts (free-plan CPU/subrequest limits).
-  "triggers": { "crons": ["*/10 * * * *"] }
+  // Weekly insight: Monday 00:00 UTC = 09:00 KST (src/weekly.js WEEKLY_CRON, must match).
+  "triggers": { "crons": ["*/10 * * * *", "0 0 * * MON"] }
 }

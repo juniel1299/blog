@@ -107,6 +107,15 @@ RRF(k=60)로 세 목록을 합치고 **글당 가장 좋은 청크 1개**만 남
 
 모델 선택 근거와 비교: [ADR 0008](adr/0008-answer-mode-workers-ai.md). 1회 ≈ 15 neurons, 응답 10분 캐시.
 
+## 인사이트: 질문 주제와 콘텐츠 공백 (`topics.js`, `weekly.js`)
+
+1. 기간 안의 질문을 모은다: 결과가 있던 질문(`search_queries`), 0건(`search_misses`), 👎(`search_feedback`). 3회 이상 묻고 클릭률 20% 미만이면 "클릭 적음"
+2. 질문을 bge-m3로 임베딩해 많이 물은 것부터 탐욕적으로 묶는다: 주제 중심 벡터와 코사인 **0.55 이상**이면 같은 주제
+   - 보정 (2026-10-24, 실제 임베딩): 같은 주제 0.53~0.92("오라클 인덱스 / 인덱스 단점" 0.59, "cors 에러 해결 / cors란" 0.64), 다른 주제 최고 0.48
+3. 0건·👎·클릭 적음이 있는 주제는 중심 벡터로 Vectorize를 검색해 가장 가까운 글을 붙인다
+   - 점수 0.55 미만 → **새 글 후보**, 이상 → **기존 글 보강** (글은 있는데 독자가 만족하지 못함)
+4. 주간 인사이트: 월요일 09:00 KST 크론(`0 0 * * MON`)이 지난 7일 지표 + 주제·공백을 요약 JSON으로 만들고 Workers AI(Gemma 4, 생각 끔)가 3~5문장으로 정리 → `weekly_insights`. 방문·질문이 없으면 모델을 부르지 않고, 모델 실패 시 숫자만 저장
+
 ## 관련 공식 문서 매칭 (`docs.js`)
 
 큐레이션 링크(`worker/seed/doc_links.sql`, 52개: Java/Spring/Oracle/HTML·CSS/JS/React/Web + Next.js/MCP·Claude Code/OpenCV)만 쓴다 ([ADR 0002](adr/0002-docs-as-curated-links.md)).

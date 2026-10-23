@@ -64,12 +64,14 @@ function section(title, hint, body) {
 
 const empty = (text = '아직 데이터가 없어요.') => el('p', { className: 'empty', text });
 
-function table(headers, rows) {
+/** numeric: column indexes shown right-aligned (default: every column but the first). */
+function table(headers, rows, numeric = headers.map((_, i) => i).slice(1)) {
   if (rows.length === 0) return empty();
+  const cls = (i) => (numeric.includes(i) ? 'num' : undefined);
   return el('div', { className: 'table-wrap' }, [
     el('table', {}, [
-      el('thead', {}, [el('tr', {}, headers.map((h) => el('th', { text: h, attrs: { scope: 'col' } })))]),
-      el('tbody', {}, rows.map((cells) => el('tr', {}, cells.map((cell) => el('td', {}, [typeof cell === 'object' ? cell : String(cell)]))))),
+      el('thead', {}, [el('tr', {}, headers.map((h, i) => el('th', { text: h, className: cls(i), attrs: { scope: 'col' } })))]),
+      el('tbody', {}, rows.map((cells) => el('tr', {}, cells.map((cell, i) => el('td', { className: cls(i) }, [typeof cell === 'object' ? cell : String(cell)]))))),
     ]),
   ]);
 }
@@ -117,11 +119,59 @@ function summaryCards(s) {
   ));
 }
 
+const GAP_LABELS = { new: '새 글 후보', improve: '기존 글 보강' };
+const KIND_LABELS = { miss: '결과 0건', disliked: '👎', lowClick: '클릭 적음' };
+
+function why(kinds) {
+  return Object.entries(KIND_LABELS)
+    .filter(([kind]) => kinds[kind] > 0)
+    .map(([kind, label]) => `${label} ${kinds[kind]}`)
+    .join(' · ');
+}
+
+function nearestCell(nearest) {
+  if (!nearest) return el('span', { className: 'muted', text: '없음' });
+  const title = nearest.title ?? `글 #${nearest.postId}`;
+  return el('span', {}, [postLink({ title, url: nearest.url }), el('span', { className: 'muted', text: ` (${nearest.score})` })]);
+}
+
+function weeklyCard(weeks, onBuild) {
+  const [latest, ...older] = weeks;
+  const build = el('button', { className: 'ghost', text: '이번 주 요약 지금 만들기', attrs: { type: 'button' } });
+  build.addEventListener('click', () => onBuild(build));
+  const body = latest
+    ? [
+        el('p', { className: 'muted hint', text: `${latest.week} 주 · 매주 월요일 오전 9시 자동 생성` }),
+        el('p', { className: 'weekly-text', text: latest.summary ?? 'AI 요약을 만들지 못했어요 (숫자는 저장됨).' }),
+      ]
+    : [el('p', { className: 'empty', text: '아직 주간 요약이 없어요. 매주 월요일 오전 9시에 만들어져요.' })];
+  const history = older.length
+    ? [el('details', {}, [el('summary', { text: `지난 요약 ${older.length}개` }), ...older.map((w) => el('p', { className: 'weekly-old' }, [el('strong', { text: `${w.week} ` }), w.summary ?? '(요약 없음)']))])]
+    : [];
+  return el('section', { className: 'card weekly' }, [el('div', { className: 'card-head' }, [el('h2', { text: '주간 인사이트' }), build]), ...body, ...history]);
+}
+
+function topicSections(topics, days) {
+  return [
+    section('다음 글 후보 (콘텐츠 공백)', '결과 0건·👎·클릭 적은 질문을 주제로 묶고, 가장 가까운 기존 글 점수(0.55 미만이면 새 글)로 나눴어요', table(
+      ['주제', '유형', '질문 수', '이유', '예시 질문', '가까운 글'],
+      topics.gaps.map((g) => [g.label, GAP_LABELS[g.type] ?? g.type, number(g.count), why(g.kinds), g.examples.join(', '), nearestCell(g.nearest)]),
+      [2],
+    )),
+    section('질문 주제', `최근 ${days}일 질문을 의미가 비슷한 것끼리 묶었어요`, table(
+      ['주제', '질문 수', '예시 질문'],
+      topics.topics.map((t) => [t.label, number(t.count), t.examples.join(', ')]),
+      [1],
+    )),
+  ];
+}
+
 const change = (value) => el('span', { className: value > 0 ? 'up' : value < 0 ? 'down' : 'muted', text: value > 0 ? `+${value}` : String(value) });
 
-function render(report) {
+function render(report, topics, weeks, onBuild) {
   const root = $('[data-report]');
   root.replaceChildren(
+    weeklyCard(weeks, onBuild),
     summaryCards(report.summary),
     el('div', { className: 'grid' }, [
       section('일별 조회', '한국 시간 기준', dailyChart(report.daily)),
@@ -139,7 +189,9 @@ function render(report) {
     section('검색 유입 키워드', '네이버·다음·빙 등이 넘겨준 검색어 (구글은 검색어를 숨김)', table(
       ['검색어', '검색엔진', '방문'],
       report.keywords.map((k) => [k.query, SOURCE_LABELS[k.engine] ?? k.engine, number(k.n)]),
+      [2],
     )),
+    ...topicSections(topics, report.days),
     section('많이 묻는 질문', '클릭률 = 결과 카드를 누른 비율. 낮으면 결과가 기대와 다를 수 있어요', table(
       ['질문', '횟수', 'AI 답변', '클릭', '클릭률'],
       report.questions.map((q) => [q.query, number(q.count), number(q.answers), number(q.clicks), percent(q.clickRate)]),
@@ -168,24 +220,40 @@ async function load(days) {
   $('[data-login]').hidden = true;
   $('[data-controls]').hidden = false;
   $('[data-status]').textContent = '불러오는 중…';
-  let res;
+  const get = (path) => fetch(path, { headers: { authorization: `Bearer ${token}` } });
+  let responses;
   try {
-    res = await fetch(`/admin/insights?days=${days}`, { headers: { authorization: `Bearer ${token}` } });
+    responses = await Promise.all([get(`/admin/insights?days=${days}`), get(`/admin/insights/topics?days=${days}`), get('/admin/weekly')]);
   } catch {
     $('[data-status]').textContent = '서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.';
     return;
   }
   // The admin API answers 404 to a wrong token so it does not reveal itself.
-  if (res.status === 404) {
+  if (responses.some((res) => res.status === 404)) {
     saveToken('');
     return showLogin('토큰이 맞지 않아요.');
   }
-  if (!res.ok) {
-    $('[data-status]').textContent = `불러오지 못했어요 (HTTP ${res.status}).`;
+  const failed = responses.find((res) => !res.ok);
+  if (failed) {
+    $('[data-status]').textContent = `불러오지 못했어요 (HTTP ${failed.status}).`;
     return;
   }
-  render(await res.json());
+  const [report, topics, weekly] = await Promise.all(responses.map((res) => res.json()));
+  render(report, topics, weekly.weeks, (button) => buildWeekly(button, token, days));
   $('[data-status]').textContent = `최근 ${days}일 · ${new Date().toLocaleString('ko-KR')} 기준`;
+}
+
+async function buildWeekly(button, token, days) {
+  button.disabled = true;
+  button.textContent = '만드는 중… (최대 1분)';
+  try {
+    const res = await fetch('/admin/weekly', { method: 'POST', headers: { authorization: `Bearer ${token}` } });
+    if (!res.ok) throw new Error(String(res.status));
+    await load(days);
+  } catch {
+    button.disabled = false;
+    button.textContent = '실패했어요. 다시 시도';
+  }
 }
 
 let currentDays = 7;
