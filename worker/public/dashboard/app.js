@@ -143,6 +143,7 @@ function weeklyCard(weeks, onBuild) {
     ? [
         el('p', { className: 'muted hint', text: `${latest.week} 주 · 매주 월요일 오전 9시 자동 생성` }),
         el('p', { className: 'weekly-text', text: latest.summary ?? 'AI 요약을 만들지 못했어요 (숫자는 저장됨).' }),
+        ...(latest.notionUrl ? [el('p', { className: 'hint' }, [postLink({ title: '노션에서 보기 ↗', url: latest.notionUrl })])] : []),
       ]
     : [el('p', { className: 'empty', text: '아직 주간 요약이 없어요. 매주 월요일 오전 9시에 만들어져요.' })];
   const history = older.length
@@ -249,7 +250,9 @@ async function buildWeekly(button, token, days) {
   try {
     const res = await fetch('/admin/weekly', { method: 'POST', headers: { authorization: `Bearer ${token}` } });
     if (!res.ok) throw new Error(String(res.status));
+    const { notion } = await res.json();
     await load(days);
+    if (notion?.error) $('[data-status]').textContent = `주간 요약은 저장했지만 ${notion.error}`;
   } catch {
     button.disabled = false;
     button.textContent = '실패했어요. 다시 시도';

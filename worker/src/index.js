@@ -5,7 +5,7 @@ import { runIngest } from './ingest/run.js';
 import { purgeOldEvents } from './events.js';
 import { purgeOldFeedback } from './feedback.js';
 import { purgeOldMisses } from './misses.js';
-import { WEEKLY_CRON, buildWeekly } from './weekly.js';
+import { WEEKLY_CRON, buildAndPublish } from './weekly.js';
 
 async function checkReady(env, requestId) {
   try {
@@ -49,8 +49,9 @@ export default {
   async scheduled(controller, env, ctx) {
     if (controller.cron === WEEKLY_CRON) {
       ctx.waitUntil(
-        buildWeekly(env).then(
-          (week) => console.log(JSON.stringify({ event: 'weekly_built', week: week.week, summarized: week.summary !== null })),
+        buildAndPublish(env).then(
+          (week) =>
+            console.log(JSON.stringify({ event: 'weekly_built', week: week.week, summarized: week.summary !== null, notion: week.notion })),
           (error) => console.error(JSON.stringify({ event: 'weekly_failed', error: String(error) })),
         ),
       );
