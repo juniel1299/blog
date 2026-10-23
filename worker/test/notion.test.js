@@ -112,10 +112,10 @@ describe('pushWeekly', () => {
     expect(fetchImpl.mock.calls.at(-1)[0]).toBe('https://api.notion.com/v1/pages');
   });
 
-  test('other Notion errors throw with the status, without the token', async () => {
-    const fetchImpl = vi.fn(async () => new Response('{"message":"unauthorized"}', { status: 401 }));
+  test("other Notion errors throw with the status and Notion's reason, without the token", async () => {
+    const fetchImpl = vi.fn(async () => new Response('{"code":"unauthorized","message":"API token is invalid."}', { status: 401 }));
     const error = await pushWeekly(env(), WEEK, fetchImpl).catch((e) => e);
-    expect(String(error)).toContain('401');
+    expect(String(error)).toBe('Error: Notion POST /pages failed: HTTP 401 (unauthorized: API token is invalid.)');
     expect(String(error)).not.toContain('ntn_test');
   });
 });

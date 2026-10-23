@@ -48,7 +48,12 @@ async function call(env, fetchImpl, method, path, body) {
   });
 }
 
-const fail = (method, path, res) => new Error(`Notion ${method} ${path} failed: HTTP ${res.status}`);
+/** Error with Notion's own code/message (e.g. object_not_found: page not shared with the integration). Never the token. */
+async function fail(method, path, res) {
+  const body = await res.json().catch(() => ({}));
+  const detail = [body.code, body.message].filter(Boolean).join(': ').slice(0, 300);
+  return new Error(`Notion ${method} ${path} failed: HTTP ${res.status}${detail ? ` (${detail})` : ''}`);
+}
 const titleProperty = (week) => ({ title: { title: [rt(`${week} 주간 인사이트`)] } });
 
 /** Clears and refills an existing page. null when the page is gone (deleted in Notion). */
@@ -56,10 +61,10 @@ async function rewrite(env, fetchImpl, pageId, week, children) {
   const path = `/pages/${pageId}`;
   const res = await call(env, fetchImpl, 'PATCH', path, { erase_content: true, properties: titleProperty(week) });
   if (res.status === 404) return null;
-  if (!res.ok) throw fail('PATCH', path, res);
+  if (!res.ok) throw await fail('PATCH', path, res);
   const page = await res.json();
   const append = await call(env, fetchImpl, 'PATCH', `/blocks/${pageId}/children`, { children });
-  if (!append.ok) throw fail('PATCH', `/blocks/${pageId}/children`, append);
+  if (!append.ok) throw await fail('PATCH', `/blocks/${pageId}/children`, append);
   return { id: page.id ?? pageId, url: page.url };
 }
 
@@ -70,7 +75,7 @@ async function create(env, fetchImpl, week, children) {
     properties: titleProperty(week),
     children,
   });
-  if (!res.ok) throw fail('POST', '/pages', res);
+  if (!res.ok) throw await fail('POST', '/pages', res);
   const page = await res.json();
   return { id: page.id, url: page.url };
 }
