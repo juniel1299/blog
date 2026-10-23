@@ -44,6 +44,10 @@ curl -H "authorization: Bearer $(sed -n 's/^ADMIN_TOKEN=//p' worker/.dev.vars)" 
 # 인사이트 대시보드 (브라우저): 처음 한 번 ADMIN_TOKEN 입력, 이 브라우저에만 저장
 #   https://tistory-ai-assistant-api.youngs5440.workers.dev/dashboard/
 
+# 주간 인사이트: 월요일 09:00 KST 크론이 자동 생성. 대시보드의 "지금 만들기" 또는:
+curl -X POST -H "authorization: Bearer $(sed -n 's/^ADMIN_TOKEN=//p' worker/.dev.vars)" \
+  "https://tistory-ai-assistant-api.youngs5440.workers.dev/admin/weekly"
+
 # 👍/👎 합계와 👎 많은 질문
 curl -H "authorization: Bearer $(sed -n 's/^ADMIN_TOKEN=//p' worker/.dev.vars)" \
   "https://tistory-ai-assistant-api.youngs5440.workers.dev/admin/feedback?days=30"

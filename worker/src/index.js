@@ -5,6 +5,7 @@ import { runIngest } from './ingest/run.js';
 import { purgeOldEvents } from './events.js';
 import { purgeOldFeedback } from './feedback.js';
 import { purgeOldMisses } from './misses.js';
+import { WEEKLY_CRON, buildWeekly } from './weekly.js';
 
 async function checkReady(env, requestId) {
   try {
@@ -44,8 +45,17 @@ export default {
     return json(errorBody('NOT_FOUND', 'Not found', requestId), 404, headers);
   },
 
-  /** Cron trigger: one incremental sync pass (see docs/architecture.md, 수집) + miss/feedback/analytics log retention. */
+  /** Cron triggers: Monday weekly insight (WEEKLY_CRON); otherwise one incremental sync pass (see docs/architecture.md, 수집) + miss/feedback/analytics log retention. */
   async scheduled(controller, env, ctx) {
+    if (controller.cron === WEEKLY_CRON) {
+      ctx.waitUntil(
+        buildWeekly(env).then(
+          (week) => console.log(JSON.stringify({ event: 'weekly_built', week: week.week, summarized: week.summary !== null })),
+          (error) => console.error(JSON.stringify({ event: 'weekly_failed', error: String(error) })),
+        ),
+      );
+      return;
+    }
     ctx.waitUntil(
       runIngest(env).then(
         (report) => console.log(JSON.stringify({ event: 'ingest_run', cron: controller.cron, ...report })),

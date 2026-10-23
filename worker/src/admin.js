@@ -1,6 +1,8 @@
 import { errorBody, json } from './http.js';
 import { feedbackReport } from './feedback.js';
 import { insights } from './insights.js';
+import { topicReport } from './topics.js';
+import { buildWeekly, listWeekly } from './weekly.js';
 import { readPost, runIngest } from './ingest/run.js';
 import { RETENTION_DAYS, topMisses } from './misses.js';
 import { similarScores } from './posts.js';
@@ -48,12 +50,21 @@ export async function handleAdmin(request, env, { pathname, searchParams }, requ
       const scores = await similarScores(env, Number(id));
       return json({ id: Number(id), scores: scores?.slice(0, 10) ?? null, requestId }, 200, headers);
     }
-    if (request.method === 'GET' && ['/admin/misses', '/admin/feedback', '/admin/insights'].includes(pathname)) {
+    if (request.method === 'GET' && pathname === '/admin/weekly') {
+      return json({ weeks: await listWeekly(env), requestId }, 200, { ...headers, 'cache-control': 'no-store' });
+    }
+    if (request.method === 'POST' && pathname === '/admin/weekly') {
+      return json({ ...(await buildWeekly(env)), requestId }, 200, headers);
+    }
+    if (request.method === 'GET' && ['/admin/misses', '/admin/feedback', '/admin/insights', '/admin/insights/topics'].includes(pathname)) {
       const days = Number(searchParams.get('days') ?? 30);
       if (!Number.isInteger(days) || days < 1 || days > RETENTION_DAYS) {
         return json(errorBody('INVALID_DAYS', `days must be 1-${RETENTION_DAYS}`, requestId), 400, headers);
       }
       if (pathname === '/admin/feedback') return json({ days, ...(await feedbackReport(env, days)), requestId }, 200, headers);
+      if (pathname === '/admin/insights/topics') {
+        return json({ days, ...(await topicReport(env, days)), requestId }, 200, { ...headers, 'cache-control': 'no-store' });
+      }
       if (pathname === '/admin/insights') {
         return json({ ...(await insights(env, days)), requestId }, 200, { ...headers, 'cache-control': 'no-store' });
       }

@@ -70,6 +70,17 @@ seed에서 행을 지워도 DB에서 지워지지 않는다 → 삭제는 `wrang
 
 결과 0건 질문은 계속 `search_misses`에만. 헤더 검색은 타이핑 중 글자라 질문으로 기록하지 않고, 클릭할 때 `result_clicks.query`로 남는다. 전체 리퍼러 URL은 저장하지 않는다.
 
+### weekly_insights (0006)
+
+| 컬럼 | 설명 |
+|---|---|
+| week | PK. 그 주 월요일(한국 시간) `YYYY-MM-DD` |
+| summary | Workers AI가 쓴 3~5문장. 모델 실패 시 null |
+| report | 요약 JSON: 지표, 상위/급상승 글, 유입, 검색어, 질문, 주제, 다음 글 후보 |
+| created_at | 만든 시각 (UTC). 같은 주에 다시 만들면 덮어씀 |
+
+집계값만 있어 개인정보 없음, 기록으로 계속 보관. 3-4에서 노션으로 보낸다.
+
 ### search_feedback (0004)
 
 | 컬럼 | 설명 |
