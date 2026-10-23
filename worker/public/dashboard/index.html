@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>블로그 인사이트</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <h1>블로그 인사이트 <span class="sub">주니엘의 개발일지</span></h1>
+      <div class="controls" data-controls hidden>
+        <div class="period" role="group" aria-label="기간">
+          <button type="button" data-days="7" aria-pressed="true">7일</button>
+          <button type="button" data-days="30" aria-pressed="false">30일</button>
+          <button type="button" data-days="90" aria-pressed="false">90일</button>
+        </div>
+        <button type="button" class="ghost" data-logout>로그아웃</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <form class="login" data-login hidden>
+      <h2>관리자 토큰</h2>
+      <p class="muted">Worker의 <code>ADMIN_TOKEN</code>을 입력하세요. 이 브라우저에만 저장됩니다.</p>
+      <label class="sr-only" for="token">관리자 토큰</label>
+      <input id="token" type="password" autocomplete="current-password" required minlength="32">
+      <button type="submit">열기</button>
+      <p class="error" data-login-error role="alert"></p>
+    </form>
+
+    <p class="status" data-status role="status"></p>
+    <div data-report hidden></div>
+  </main>
+</body>
+</html>

@@ -41,6 +41,9 @@
 curl -H "authorization: Bearer $(sed -n 's/^ADMIN_TOKEN=//p' worker/.dev.vars)" \
   "https://tistory-ai-assistant-api.youngs5440.workers.dev/admin/misses?days=30"
 
+# 인사이트 대시보드 (브라우저): 처음 한 번 ADMIN_TOKEN 입력, 이 브라우저에만 저장
+#   https://tistory-ai-assistant-api.youngs5440.workers.dev/dashboard/
+
 # 👍/👎 합계와 👎 많은 질문
 curl -H "authorization: Bearer $(sed -n 's/^ADMIN_TOKEN=//p' worker/.dev.vars)" \
   "https://tistory-ai-assistant-api.youngs5440.workers.dev/admin/feedback?days=30"
