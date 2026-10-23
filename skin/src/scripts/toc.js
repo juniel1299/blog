@@ -1,4 +1,6 @@
 const HEADING_SELECTOR = 'h1, h2, h3, h4';
+// Blocks Tistory appends inside the post body; their headings are not part of the post.
+const INJECTED = '.another_category, .container_postbtn, .tt_box_namecard';
 
 /**
  * Fills `list` with links to the headings inside `article`. Uses textContent only (no HTML injection).
@@ -7,7 +9,7 @@ const HEADING_SELECTOR = 'h1, h2, h3, h4';
  * @returns {HTMLElement[]} headings that got a TOC entry
  */
 export function buildToc(article, list) {
-  const headings = [...article.querySelectorAll(HEADING_SELECTOR)].filter((h) => h.textContent.trim());
+  const headings = [...article.querySelectorAll(HEADING_SELECTOR)].filter((h) => h.textContent.trim() && !h.closest(INJECTED));
   const topLevel = Math.min(...headings.map((h) => Number(h.tagName[1])));
 
   const items = headings.map((heading, index) => {
