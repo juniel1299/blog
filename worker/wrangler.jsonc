@@ -2,6 +2,8 @@
   "$schema": "../node_modules/wrangler/config-schema.json",
   "name": "tistory-ai-assistant-api",
   "main": "src/index.js",
+  // Insight dashboard page (public/dashboard/); its data comes from /admin/insights with ADMIN_TOKEN.
+  "assets": { "directory": "./public" },
   "compatibility_date": "2026-09-01",
   "observability": { "enabled": true },
   "vars": {

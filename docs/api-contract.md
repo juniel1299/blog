@@ -31,6 +31,7 @@
 | GET | `/admin/search-debug?q=<질문>` | `{ parsed, strong, body, vector: [{id, score}], picked }` 검색 후보와 점수, 최종 선택 (캐시·IP 제한 없음, `eval:search`가 사용) | 400 `INVALID_QUERY` |
 | GET | `/admin/similar-debug?id=<글번호>` | `{ id, scores: [{postId, score}] }` 비슷한 글 점수 상위 10개 (임계값 없이) | 400 `INVALID_ID` |
 | GET | `/admin/misses?days=<1~90>` | `{ days, misses: [{query, count, last_seen}] }` 결과 0건 질문 상위 50개 (기본 30일) | 400 `INVALID_DAYS` |
+| GET | `/admin/insights?days=<1~90>` | 인사이트 대시보드 데이터: `summary`(조회·평균 시간·읽은 깊이·끝까지 읽음 비율·질문·AI 답변·클릭·0건·👍/👎), `daily`(한국 날짜별 조회), `posts`(글별 조회·이전 기간 대비 변화·평균 시간·읽힘률·챗봇 클릭), `rising`, `sources`, `referrers`, `keywords`, `questions`(횟수·AI 답변·클릭률), `clickSources`, `misses`, `disliked`. `cache-control: no-store` | 400 `INVALID_DAYS` |
 | GET | `/admin/feedback?days=<1~90>` | `{ days, totals: {up, down}, queries: [{query, down, up, lastPostIds, last_seen}] }` 👎 많은 질문 상위 50개 | 400 `INVALID_DAYS` |
 
 ### `POST /api/v1/search`

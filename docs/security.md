@@ -5,6 +5,7 @@
 | 위협 | 대응 | 위치 |
 |---|---|---|
 | 공개 API 남용 / 무료 한도 소진 | IP당 분당 20회(Rate Limiting binding, 답변 포함), 응답 10분 캐시, Workers AI 한도 소진 시 답변만 503 → 검색으로 대체, 질문 200자·본문 2KB 제한 | `api.js`, `wrangler.jsonc` |
+| 대시보드 페이지 | 정적 페이지는 데이터 없음. 데이터는 관리자 토큰이 있어야 하는 `/admin/insights`. 페이지 CSP `default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'`, 프레임 금지, `noindex`. 방문자 질문/검색어는 `textContent`로만 그림 (HTML로 해석 안 됨). 토큰은 그 브라우저 `localStorage`에만 | `worker/public/` |
 | 관리자 API 노출 | `Bearer ADMIN_TOKEN`, 길이 같을 때만 비교하는 상수 시간 비교, 토큰 없거나 32자 미만이면 기능 자체 꺼짐, 실패 시 401이 아닌 404로 존재를 숨김 | `admin.js` |
 | 내부 정보 노출 | 오류 응답은 코드+일반 메시지만. 스택/SQL/원인은 Worker 로그에만 | `http.js`, 각 핸들러 |
 | SQL 인젝션 | 모든 값 바인딩(`?`). FTS 검색어는 따옴표로 감싸 연산자 무력화, LIKE는 `%`/`_` 이스케이프 | `search.js`, `query.js` |
