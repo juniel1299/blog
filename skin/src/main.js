@@ -1,4 +1,5 @@
 import './styles/main.css';
+import { initPageBeacon } from './scripts/analytics.js';
 import { initCodeBlocks } from './scripts/code-blocks.js';
 import { initHeaderSearch } from './scripts/header-search.js';
 import { initPostMeta } from './scripts/post-meta.js';
@@ -19,8 +20,10 @@ function start() {
   initPostMeta(document.querySelector('.post-meta'), article);
   const assistant = document.getElementById('ai-assistant');
   const apiBase = assistant?.dataset.apiBase ?? '';
+  const postId = currentPostId(window.location, document.body.id);
   initHeaderSearch(document.getElementById('search-input'), apiBase);
-  initSeries(document.querySelector('.post-header'), apiBase, currentPostId(window.location, document.body.id));
+  initSeries(document.querySelector('.post-header'), apiBase, postId);
+  initPageBeacon({ apiBase, postId, article });
   mountWidget(assistant);
 }
 

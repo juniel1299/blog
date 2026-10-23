@@ -7,14 +7,14 @@ const results = [
   { postId: 99, title: '[React] 8. useReducer', url: 'https://b/99', category: 'JavaScript/React', heading: null, preview: 'reducer' },
 ];
 
-function setup(search, navigate = vi.fn()) {
+function setup(search, navigate = vi.fn(), track = vi.fn()) {
   document.body.innerHTML =
     '<form class="search" role="search"><input id="search-input" type="search"></form><p id="outside">x</p>';
   const input = document.getElementById('search-input');
   const submit = vi.fn((event) => event.preventDefault());
   input.form.addEventListener('submit', submit);
-  initHeaderSearch(input, 'https://api', { search, navigate, delay: 0 });
-  return { input, submit, navigate, panel: () => document.querySelector('.search-panel') };
+  initHeaderSearch(input, 'https://api', { search, navigate, track, delay: 0 });
+  return { input, submit, navigate, track, panel: () => document.querySelector('.search-panel') };
 }
 
 const type = async (input, value) => {
@@ -38,7 +38,7 @@ describe('header search', () => {
     const { input, panel } = setup(search);
     await type(input, 'useEffect');
 
-    expect(search).toHaveBeenCalledWith('https://api', 'useEffect');
+    expect(search).toHaveBeenCalledWith('https://api', 'useEffect', { source: 'header' });
     const links = panel().querySelectorAll('a.search-item');
     expect([...links].map((a) => a.getAttribute('href'))).toEqual(['https://b/98', 'https://b/99']);
     expect(links[0].querySelector('.search-item-title').textContent).toBe('[React] 7. useEffect');
@@ -60,7 +60,7 @@ describe('header search', () => {
   });
 
   test('arrow keys pick a result and Enter opens it instead of the native search', async () => {
-    const { input, submit, navigate, panel } = setup(async () => ({ results }));
+    const { input, submit, navigate, track, panel } = setup(async () => ({ results }));
     await type(input, 'react');
 
     press(input, 'ArrowDown');
@@ -72,6 +72,14 @@ describe('header search', () => {
     expect(press(input, 'Enter').defaultPrevented).toBe(true);
     expect(navigate).toHaveBeenCalledWith('https://b/99');
     expect(submit).not.toHaveBeenCalled();
+    expect(track).toHaveBeenCalledWith('https://api', { type: 'click', postId: 99, position: 2, source: 'header', query: 'react' });
+  });
+
+  test('mouse clicks on a result are recorded too', async () => {
+    const { input, track, panel } = setup(async () => ({ results }));
+    await type(input, 'useEffect');
+    panel().querySelector('a.search-item').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    expect(track).toHaveBeenCalledWith('https://api', { type: 'click', postId: 98, position: 1, source: 'header', query: 'useEffect' });
   });
 
   test('Enter without a picked result keeps the native Tistory search', async () => {

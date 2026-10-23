@@ -1,6 +1,6 @@
 # API Contract
 
-구현된 것: `GET /health/live`, `GET /health/ready`, `POST /api/v1/search`, `GET /api/v1/posts/recent`, `GET /api/v1/posts/:postId/similar`, `GET /api/v1/posts/:postId/docs`, `GET /api/v1/posts/:postId/series`, `POST /api/v1/feedback`, `POST /api/v1/answer`, 관리자 API(`/admin/*`). 공개 API는 모두 같은 IP 제한(분당 20회)을 쓴다.
+구현된 것: `GET /health/live`, `GET /health/ready`, `POST /api/v1/search`, `GET /api/v1/posts/recent`, `GET /api/v1/posts/:postId/similar`, `GET /api/v1/posts/:postId/docs`, `GET /api/v1/posts/:postId/series`, `POST /api/v1/feedback`, `POST /api/v1/answer`, `POST /api/v1/events`, 관리자 API(`/admin/*`). 공개 API는 모두 같은 IP 제한(분당 20회)을 쓴다.
 
 ## 공통
 
@@ -106,6 +106,21 @@
 - 맞는 글이 없으면 `answer: null, sources: []`, 글은 있지만 답이 안 되면 `answer: null` + sources
 - 본문 검증은 search와 같음(400 `INVALID_QUERY`). 모델 실패·무료 한도 소진 503 `ANSWER_UNAVAILABLE` → 위젯은 검색으로 대체
 - 같은 IP 제한, 정규화한 질문 기준 10분 캐시
+
+### `POST /api/v1/events`
+
+스킨/위젯이 `navigator.sendBeacon`으로 보내는 수집 이벤트 (본문은 text/plain JSON이라 CORS preflight 없음). 유효하면 항상 204 (저장 실패는 로그만, 페이지에 영향 없음).
+
+```json
+{ "type": "view", "path": "/98", "postId": 98, "referrer": "https://search.naver.com/...?query=…", "depth": 75, "seconds": 42 }
+{ "type": "click", "postId": 119, "position": 1, "source": "answer", "query": "Redux랑 Zustand 차이?" }
+```
+
+- 검증: 2KB, `path`는 `/`로 시작 200자, `depth` 0/25/50/75/100, `seconds` 0~86400, `position` 1~6, `source` chat/answer/list/header. 아니면 400 `INVALID_EVENT`
+- 리퍼러는 서버에서 호스트와 검색엔진 검색어만 뽑아 저장 (`events.js` parseReferrer)
+- IP당 분당 60회 (`EVENTS_LIMITER`, 검색 한도와 별도)
+
+`POST /api/v1/search`는 선택 필드 `source: "header"`를 받는다 (헤더 검색은 질문 기록에서 제외).
 
 ### `POST /api/v1/feedback`
 

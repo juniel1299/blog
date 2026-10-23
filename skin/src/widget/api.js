@@ -42,14 +42,15 @@ const safeCards = (list) => list.filter((item) => typeof item.title === 'string'
 /**
  * @param {string} apiBase e.g. https://tistory-ai-assistant-api.<sub>.workers.dev
  * @param {string} query
- * @param {{ offset?: number, fetchImpl?: typeof fetch }} [options] offset 3 = "더 보기" page
+ * @param {{ offset?: number, fetchImpl?: typeof fetch, source?: 'header' }} [options] offset 3 = "더 보기" page;
+ *   source "header" keeps type-ahead words out of the question log
  * @returns {Promise<{ mode: 'search' | 'category' | 'recent', category: string | null, offset: number, hasMore: boolean,
  *   results: { postId: number, title: string, url: string, category: string | null, heading: string | null, preview: string }[] }>}
  */
-export async function searchBlog(apiBase, query, { offset = 0, fetchImpl = fetch } = {}) {
+export async function searchBlog(apiBase, query, { offset = 0, fetchImpl = fetch, source } = {}) {
   const body = await requestJson(
     apiUrl(apiBase, '/api/v1/search'),
-    { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ query, offset }) },
+    { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(source ? { query, offset, source } : { query, offset }) },
     fetchImpl,
   );
   if (!Array.isArray(body.results)) throw new SearchError('server', '검색 결과를 읽지 못했어요.');
@@ -121,4 +122,17 @@ export async function askBlog(apiBase, query, { fetchImpl = fetch } = {}) {
   // [n] points at the n-th source, so a dropped source would mislabel citations: show cards only.
   const answer = typeof body.answer === 'string' && sources.length === body.sources.length ? body.answer : null;
   return { answer, sources };
+}
+
+/**
+ * Analytics beacon (page view / card click) for the insight dashboard. Fire-and-forget: sendBeacon posts
+ * text/plain (no CORS preflight) and survives page navigation; failures are ignored on purpose.
+ */
+export function sendEvent(apiBase, event, send = (url, body) => navigator.sendBeacon?.(url, body)) {
+  if (!apiBase) return;
+  try {
+    send(apiUrl(apiBase, '/api/v1/events'), JSON.stringify(event));
+  } catch {
+    // Blocked by an extension or unsupported: analytics must never affect reading.
+  }
 }

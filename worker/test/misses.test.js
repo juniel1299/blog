@@ -4,9 +4,11 @@ import worker from '../src/index.js';
 /** D1 stand-in for the search path: FTS returns `ftsIds`; records INSERTs into search_misses. */
 function env({ ftsIds = [], insertFails = false } = {}) {
   const inserted = [];
+  const queries = [];
   const rows = { '1-0': { chunk_id: '1-0', heading: null, text: '본문 문장입니다 충분히 길게', post_id: 1, title: 'T', url: 'https://b/1', category: null } };
   return {
     inserted,
+    queries,
     ADMIN_TOKEN: 'a'.repeat(48),
     AI: { run: async () => ({ data: [[0.1]] }) },
     VECTORIZE: { query: async () => ({ matches: [] }) },
@@ -21,7 +23,8 @@ function env({ ftsIds = [], insertFails = false } = {}) {
           },
           run: async () => {
             if (insertFails) throw new Error('d1 down');
-            inserted.push(args[0]);
+            if (sql.includes('search_queries')) queries.push(args);
+            else inserted.push(args[0]);
           },
         }),
       }),
@@ -29,10 +32,10 @@ function env({ ftsIds = [], insertFails = false } = {}) {
   };
 }
 
-async function search(query, e) {
+async function search(query, e, extra = {}) {
   const pending = [];
   const res = await worker.fetch(
-    new Request('https://api.test/api/v1/search', { method: 'POST', body: JSON.stringify({ query }) }),
+    new Request('https://api.test/api/v1/search', { method: 'POST', body: JSON.stringify({ query, ...extra }) }),
     e,
     { waitUntil: (p) => pending.push(p) },
   );
@@ -54,6 +57,23 @@ describe('zero-result logging', () => {
     const e = env({ ftsIds: ['1-0'] });
     await search('문장입니다', e); // 3+ chars so it takes the FTS path the mock answers
     expect(e.inserted).toEqual([]);
+  });
+
+  test('questions that found posts are logged with the posts shown; zero-result ones are not', async () => {
+    const e = env({ ftsIds: ['1-0'] });
+    await search('  문장입니다  ', e);
+    expect(e.queries).toEqual([['문장입니다', 'search', '[1]']]);
+
+    const empty = env();
+    await search('없는 주제', empty);
+    expect(empty.queries).toEqual([]);
+  });
+
+  test('header search (typed letter by letter) and "더 보기" pages are not logged as questions', async () => {
+    const e = env({ ftsIds: ['1-0'] });
+    await search('문장입니다', e, { source: 'header' });
+    await search('문장입니다', e, { offset: 3 });
+    expect(e.queries).toEqual([]);
   });
 
   test('a logging failure does not fail the search', async () => {

@@ -8,6 +8,7 @@ import {
   fetchSimilar,
   isQuestion,
   searchBlog,
+  sendEvent,
   sendFeedback,
 } from './api.js';
 import { ResultCard } from './ResultCard.jsx';
@@ -55,7 +56,8 @@ function DocsAnswer({ message }) {
   );
 }
 
-function CardsAnswer({ label, results, actions, numbered = false }) {
+/** source/query/offset label clicks for the dashboard: where the list was shown, for which question, at which rank. */
+function CardsAnswer({ label, results, actions, numbered = false, source, query = null, offset = 0 }) {
   if (results.length === 0) return <p className="aia-bubble">{label}</p>;
   return (
     <div className="aia-answer">
@@ -66,6 +68,7 @@ function CardsAnswer({ label, results, actions, numbered = false }) {
             key={result.postId}
             result={result}
             number={numbered ? i + 1 : undefined}
+            onOpen={() => actions.open(result, offset + i + 1, source, query)}
             onShowDocs={() => actions.showDocs(result)}
             docsRequested={actions.docsRequested.has(result.postId)}
           />
@@ -97,7 +100,7 @@ function AiAnswer({ message, actions }) {
       <p className="aia-ai-note">AI가 블로그 글로 정리한 답이에요. 아래 원문도 확인해 주세요.</p>
     </div>
   );
-  return <CardsAnswer label={label} results={message.results} actions={actions} numbered />;
+  return <CardsAnswer label={label} results={message.results} actions={actions} numbered source="answer" query={message.query} />;
 }
 
 const THANKS = { up: '알려줘서 고마워요.', down: '알려줘서 고마워요. 검색을 고치는 데 쓸게요.' };
@@ -132,7 +135,7 @@ function AssistantMessage({ message, actions }) {
   }
   if (message.status === 'error') return <p className="aia-bubble aia-error">{message.text}</p>;
   if (message.kind === 'docs') return <DocsAnswer message={message} />;
-  if (message.kind === 'list') return <CardsAnswer label={message.label} results={message.results} actions={actions} />;
+  if (message.kind === 'list') return <CardsAnswer label={message.label} results={message.results} actions={actions} source="list" />;
   if (message.kind === 'answer') {
     return (
       <>
@@ -143,7 +146,14 @@ function AssistantMessage({ message, actions }) {
   }
   return (
     <>
-      <CardsAnswer label={resultsLabel(message)} results={message.results} actions={actions} />
+      <CardsAnswer
+        label={resultsLabel(message)}
+        results={message.results}
+        actions={actions}
+        source="chat"
+        query={message.query}
+        offset={message.offset}
+      />
       {message.results.length > 0 && <Feedback message={message} actions={actions} />}
       {message.hasMore && !message.moreRequested && (
         <button type="button" className="aia-more" onClick={() => actions.showMore(message)}>
@@ -156,7 +166,8 @@ function AssistantMessage({ message, actions }) {
 
 /**
  * @param {{ apiBase?: string, currentPostId?: number | null, search?: typeof searchBlog, docs?: typeof fetchDocs,
- *   recent?: typeof fetchRecent, similar?: typeof fetchSimilar, feedback?: typeof sendFeedback, answer?: typeof askBlog }} props
+ *   recent?: typeof fetchRecent, similar?: typeof fetchSimilar, feedback?: typeof sendFeedback, answer?: typeof askBlog,
+ *   track?: typeof sendEvent }} props
  */
 export function ChatWidget({
   apiBase = '',
@@ -167,6 +178,7 @@ export function ChatWidget({
   similar = fetchSimilar,
   feedback = sendFeedback,
   answer = askBlog,
+  track = sendEvent,
 }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -263,6 +275,9 @@ export function ChatWidget({
         postTitle: result.title,
         docs: await docs(apiBase, result.postId),
       }));
+    },
+    open(result, position, source, query) {
+      track(apiBase, { type: 'click', postId: result.postId, position, source, query });
     },
     async vote(message, vote) {
       const mark = (state) => setMessages((list) => list.map((m) => (m.id === message.id ? { ...m, feedback: state } : m)));
