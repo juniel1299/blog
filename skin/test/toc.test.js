@@ -28,6 +28,14 @@ describe('toc', () => {
     expect(document.getElementById(items[0].querySelector('a').hash.slice(1))?.textContent).toBe('Intro');
   });
 
+  test("skips headings in blocks Tistory injects into the post body (e.g. the category's other posts)", () => {
+    const container = setup(
+      '<h2>Intro</h2><div class="another_category"><h4>\'React\' 카테고리의 다른 글</h4></div><div class="container_postbtn"><h3>공유</h3></div>',
+    );
+    expect([...container.querySelectorAll('li')].map((li) => li.textContent)).toEqual(['Intro']);
+    expect(container.querySelector('li').className).toBe('toc-depth-0');
+  });
+
   test('renders heading text, not HTML', () => {
     const container = setup('<h2>&lt;img src=x onerror=alert(1)&gt;</h2>');
     expect(container.querySelector('img')).toBeNull();
