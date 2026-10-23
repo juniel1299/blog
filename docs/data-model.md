@@ -58,6 +58,18 @@ seed에서 행을 지워도 DB에서 지워지지 않는다 → 삭제는 `wrang
 
 결과 0건(최근 글 요청 제외)이고 캐시에 없을 때만 기록 → 10분 안의 같은 질문은 1번. Cron이 90일 지난 행 삭제.
 
+### 방문·클릭·질문 기록 (0005, 3차 인사이트 대시보드용)
+
+모두 **IP·User-Agent·쿠키·식별자 없음**, 블로그 주인(수정/삭제 링크가 보이는 상태)의 방문은 보내지 않음, Cron이 90일 지난 행 삭제.
+
+| 테이블 | 한 행 | 컬럼 |
+|---|---|---|
+| `page_views` | 방문 1회 (떠날 때 `sendBeacon` 한 번) | `path`, `post_id`(글이 아니면 null), `referrer_host`(null=직접, `internal`=블로그 안), `search_engine`/`search_query`(네이버·다음·빙 등 검색어, 100자), `depth`(본문을 어디까지 봤는지 0/25/50/75/100), `seconds`(화면에 보인 시간) |
+| `result_clicks` | 챗봇·헤더 검색에서 글 카드 클릭 | `post_id`, `position`(목록 순위), `source`(`chat`/`answer`/`list`/`header`), `query`(정규화한 질문, 첫 목록은 null) |
+| `search_queries` | 결과가 있었던 챗봇 질문 | `query`, `mode`(search/category/recent/answer), `post_ids`(처음 보여준 글 JSON) |
+
+결과 0건 질문은 계속 `search_misses`에만. 헤더 검색은 타이핑 중 글자라 질문으로 기록하지 않고, 클릭할 때 `result_clicks.query`로 남는다. 전체 리퍼러 URL은 저장하지 않는다.
+
 ### search_feedback (0004)
 
 | 컬럼 | 설명 |

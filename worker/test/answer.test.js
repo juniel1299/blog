@@ -47,7 +47,9 @@ describe('POST /api/v1/answer', () => {
   ];
 
   function env({ ftsIds = ['122-1'], llm = async () => ({ response: '쓰기 작업이 느려져요 [1].' }) } = {}) {
+    const logged = [];
     return {
+      logged,
       AI: {
         run: vi.fn(async (model, input) => (model === EMBEDDING_MODEL ? { data: [[0.1]] } : llm(input))),
       },
@@ -55,6 +57,9 @@ describe('POST /api/v1/answer', () => {
       DB: {
         prepare: (sql) => ({
           bind: (...args) => ({
+            run: async () => {
+              logged.push(args);
+            },
             all: async () => {
               if (sql.includes('MATCH')) return { results: ftsIds.map((chunk_id) => ({ chunk_id })) };
               if (sql.includes('WHERE c.id IN')) return { results: args.map((id) => rows[id]).filter(Boolean) };
@@ -67,12 +72,16 @@ describe('POST /api/v1/answer', () => {
     };
   }
 
-  const ask = (body, e = env()) =>
-    worker.fetch(
+  const ask = async (body, e = env()) => {
+    const pending = [];
+    const res = await worker.fetch(
       new Request('https://api.test/api/v1/answer', { method: 'POST', body: typeof body === 'string' ? body : JSON.stringify(body) }),
       e,
-      { waitUntil: () => {} },
+      { waitUntil: (p) => pending.push(p) },
     );
+    await Promise.all(pending);
+    return res;
+  };
 
   afterEach(() => vi.restoreAllMocks());
 
@@ -97,6 +106,13 @@ describe('POST /api/v1/answer', () => {
     const body = await (await ask({ query: '쿠버네티스 배포 방법' }, e)).json();
     expect(body).toMatchObject({ answer: null, sources: [] });
     expect(e.AI.run.mock.calls.some(([m]) => m === ANSWER_MODEL)).toBe(false);
+    expect(e.logged).toEqual([]);
+  });
+
+  test('a question that found posts is logged for the dashboard', async () => {
+    const e = env();
+    await ask({ query: '  인덱스가 많으면   왜 안 좋아? ' }, e);
+    expect(e.logged).toEqual([['인덱스가 많으면 왜 안 좋아?', 'answer', '[122]']]);
   });
 
   test('model says the posts do not answer it: no answer, sources still listed', async () => {

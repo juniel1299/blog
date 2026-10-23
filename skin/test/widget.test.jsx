@@ -10,6 +10,7 @@ import {
   isQuestion,
   isSafeUrl,
   searchBlog,
+  sendEvent,
   sendFeedback,
 } from '../src/widget/api.js';
 import { currentPostId, mountWidget } from '../src/widget/mount.jsx';
@@ -27,7 +28,7 @@ afterEach(() => {
 
 /** Renders and opens the widget; the opening "recent/similar" intro resolves before returning. */
 async function openWith(props = {}) {
-  render(<ChatWidget apiBase={API} recent={async () => []} similar={async () => []} {...props} />);
+  render(<ChatWidget apiBase={API} recent={async () => []} similar={async () => []} track={() => {}} {...props} />);
   await act(async () => {
     fireEvent.click(screen.getByRole('button', { name: 'AI 도우미 열기' }));
   });
@@ -259,6 +260,26 @@ describe('ChatWidget', () => {
     expect(screen.getByText('관련 글 1개를 찾았어요.')).toBeTruthy();
   });
 
+  test('clicking a result records which post, its rank, where it was shown and the question', async () => {
+    const track = vi.fn();
+    await openWith({ search: async () => page([card(1, 'A'), card(2, 'B')]), track });
+    await ask('리액트 상태관리');
+    fireEvent.click(screen.getByRole('link', { name: /^B/ }));
+    expect(track).toHaveBeenCalledWith(API, { type: 'click', postId: 2, position: 2, source: 'chat', query: '리액트 상태관리' });
+  });
+
+  test('clicks on AI answer sources and on the opening list are labelled as such', async () => {
+    const track = vi.fn();
+    const answer = async () => ({ answer: '답 [1]', sources: [card(122, 'Index 란?')] });
+    await openWith({ recent: async () => [card(9, 'Recent')], answer, track });
+    fireEvent.click(screen.getByRole('link', { name: /^Recent/ }));
+    expect(track).toHaveBeenLastCalledWith(API, { type: 'click', postId: 9, position: 1, source: 'list', query: null });
+
+    await ask('인덱스는 왜 써?');
+    fireEvent.click(screen.getByRole('link', { name: /^Index 란\?/ }));
+    expect(track).toHaveBeenLastCalledWith(API, { type: 'click', postId: 122, position: 1, source: 'answer', query: '인덱스는 왜 써?' });
+  });
+
   test('blank input is not sent', async () => {
     const search = vi.fn();
     await openWith({ search });
@@ -348,6 +369,25 @@ describe('api client', () => {
 
     const clean = await askBlog(API, 'q?', { fetchImpl: respond(200, { answer: 'a [1]', sources: [{ postId: 1, title: 'ok', url: 'https://blog/1' }] }) });
     expect(clean.answer).toBe('a [1]');
+  });
+
+  test('searchBlog sends the source only when given (header search)', async () => {
+    const fetchImpl = respond(200, { results: [] });
+    await searchBlog(API, 'q', { fetchImpl });
+    await searchBlog(API, 'q', { fetchImpl, source: 'header' });
+    expect(JSON.parse(fetchImpl.mock.calls[0][1].body)).toEqual({ query: 'q', offset: 0 });
+    expect(JSON.parse(fetchImpl.mock.calls[1][1].body)).toEqual({ query: 'q', offset: 0, source: 'header' });
+  });
+
+  test('sendEvent beacons JSON to the events endpoint and never throws', () => {
+    const send = vi.fn(() => true);
+    sendEvent(`${API}/`, { type: 'click', postId: 1, position: 1, source: 'chat', query: 'q' }, send);
+    expect(send).toHaveBeenCalledWith(`${API}/api/v1/events`, JSON.stringify({ type: 'click', postId: 1, position: 1, source: 'chat', query: 'q' }));
+    expect(() => sendEvent(API, {}, () => {
+      throw new Error('blocked');
+    })).not.toThrow();
+    expect(() => sendEvent('', {}, send)).not.toThrow();
+    expect(send).toHaveBeenCalledTimes(1);
   });
 
   test('sendFeedback posts the vote', async () => {

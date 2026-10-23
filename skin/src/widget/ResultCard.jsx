@@ -2,15 +2,16 @@
  * One search hit: one-line preview, the post title opening in a new tab, and a button that asks
  * the assistant for related official docs.
  * @param {{ result: { title: string, url: string, category: string | null, preview: string },
- *   onShowDocs?: () => void, docsRequested?: boolean, number?: number }} props  number: source number in an AI answer
+ *   onShowDocs?: () => void, docsRequested?: boolean, number?: number, onOpen?: () => void }} props
+ *   number: source number in an AI answer; onOpen: called when the title link is clicked (analytics)
  */
-export function ResultCard({ result, onShowDocs, docsRequested = false, number }) {
+export function ResultCard({ result, onShowDocs, docsRequested = false, number, onOpen }) {
   return (
     <li className="aia-card">
       {number && <span className="aia-card-num">[{number}]</span>}
       {result.category && <span className="aia-card-chip">{result.category}</span>}
       {result.preview && <p className="aia-card-preview">{result.preview}</p>}
-      <a className="aia-card-link" href={result.url} target="_blank" rel="noopener noreferrer">
+      <a className="aia-card-link" href={result.url} target="_blank" rel="noopener noreferrer" onClick={onOpen}>
         {result.title}
         <span aria-hidden="true"> ↗</span>
         <span className="aia-sr-only"> (새 탭에서 열림)</span>

@@ -41,6 +41,7 @@
 | 수집 | `worker/src/ingest/` | 사이트맵 비교 → 글 추출 → 청크 → 임베딩 → 저장 |
 | 관리자 | `worker/src/admin.js` | 수동 수집, 추출 미리보기, 점수 디버그, 0건 질문 |
 | 0건 로그 | `worker/src/misses.js` | 결과 없는 질문 텍스트만 저장, 90일 보관 |
+| 방문·클릭 수집 | `worker/src/events.js`, `skin/src/scripts/analytics.js` | 조회·읽은 깊이 비콘, 카드 클릭, 결과 있는 질문 (3차 대시보드용, 90일) |
 | 데이터 | `worker/migrations/`, `worker/seed/` | D1 스키마, 공식 문서 seed ([data-model.md](data-model.md)) |
 | 평가 | `worker/eval/` | 검색 품질 평가 세트와 실행기 |
 | CI/CD | `.github/workflows/ci.yml` | 검사(모든 push/PR), 배포(main) ([operations.md](operations.md)) |

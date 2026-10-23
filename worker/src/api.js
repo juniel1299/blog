@@ -1,5 +1,6 @@
 import { answerQuestion } from './answer.js';
 import { relatedDocs } from './docs.js';
+import { readEvent, recordEvent, recordQuery } from './events.js';
 import { readFeedback, recordFeedback } from './feedback.js';
 import { errorBody, json } from './http.js';
 import { recordMiss } from './misses.js';
@@ -15,7 +16,8 @@ const SEARCH_PATH = '/api/v1/search';
 const RECENT_PATH = '/api/v1/posts/recent';
 const FEEDBACK_PATH = '/api/v1/feedback';
 const ANSWER_PATH = '/api/v1/answer';
-const POST_METHOD_PATHS = new Set([SEARCH_PATH, FEEDBACK_PATH, ANSWER_PATH]);
+const EVENTS_PATH = '/api/v1/events';
+const POST_METHOD_PATHS = new Set([SEARCH_PATH, FEEDBACK_PATH, ANSWER_PATH, EVENTS_PATH]);
 const POST_PATH = /^\/api\/v1\/posts\/(\d{1,9})\/(docs|similar|series)$/;
 
 function cacheKey(normalized, kind = 'v2') {
@@ -23,19 +25,20 @@ function cacheKey(normalized, kind = 'v2') {
 }
 
 /**
- * Reads {"query": string, "offset"?: 0 | 3} with a size cap. offset pages through the RESULT_POOL
- * in steps of RESULT_LIMIT ("더 보기"). Returns null when invalid.
+ * Reads {"query": string, "offset"?: 0 | 3, "source"?: "chat" | "header"} with a size cap. offset pages
+ * through the RESULT_POOL in steps of RESULT_LIMIT ("더 보기"). Returns null when invalid.
  */
 async function readSearchBody(request) {
   const body = await request.text();
   if (body.length > MAX_BODY_BYTES) return null;
   try {
-    const { query, offset = 0 } = JSON.parse(body);
+    const { query, offset = 0, source = 'chat' } = JSON.parse(body);
     if (typeof query !== 'string') return null;
     const trimmed = query.trim();
     if (trimmed.length < 1 || trimmed.length > MAX_QUERY_CHARS) return null;
     if (!Number.isInteger(offset) || offset < 0 || offset >= RESULT_POOL || offset % RESULT_LIMIT !== 0) return null;
-    return { query: trimmed, offset };
+    if (source !== 'chat' && source !== 'header') return null;
+    return { query: trimmed, offset, source };
   } catch {
     return null;
   }
@@ -58,7 +61,7 @@ async function handleSearch(request, env, ctx, requestId, headers) {
       headers,
     );
   }
-  const { query, offset } = input;
+  const { query, offset, source } = input;
   const cache = globalThis.caches?.default;
   const normalized = normalizeQuery(query);
   const key = cacheKey(normalized);
@@ -70,6 +73,10 @@ async function handleSearch(request, env, ctx, requestId, headers) {
       ctx?.waitUntil(cache?.put(key, new Response(JSON.stringify(pool), { headers: { 'cache-control': `max-age=${CACHE_SECONDS}` } })));
       // Cached repeats within 10 minutes aren't re-logged, so counts are "distinct-ish" asks.
       if (pool.results.length === 0 && pool.mode !== 'recent') ctx?.waitUntil(recordMiss(env, normalized));
+    }
+    // Header search fires while typing, so its partial words are not logged (its clicks are, in result_clicks).
+    if (offset === 0 && source === 'chat' && pool.results.length > 0) {
+      ctx?.waitUntil(recordQuery(env, normalized, pool.mode, pool.results.slice(0, RESULT_LIMIT).map((r) => r.postId)));
     }
     const results = pool.results.slice(offset, offset + RESULT_LIMIT);
     const hasMore = offset + RESULT_LIMIT < pool.results.length;
@@ -91,6 +98,9 @@ async function handleAnswer(request, env, ctx, requestId, headers) {
     if (!body) {
       body = await answerQuestion(env, input.query);
       ctx?.waitUntil(cache?.put(key, new Response(JSON.stringify(body), { headers: { 'cache-control': `max-age=${CACHE_SECONDS}` } })));
+    }
+    if (body.sources.length > 0) {
+      ctx?.waitUntil(recordQuery(env, normalizeQuery(input.query), 'answer', body.sources.map((s) => s.postId)));
     }
     return json({ query: input.query, ...body, requestId }, 200, headers);
   } catch (error) {
@@ -135,6 +145,18 @@ async function handleFeedback(request, env, requestId, headers) {
   }
 }
 
+/** Analytics beacon. Always 204 once valid: a storage problem must never surface on the blog. */
+async function handleEvent(request, env, requestId, headers) {
+  const event = await readEvent(request);
+  if (!event) return json(errorBody('INVALID_EVENT', '잘못된 이벤트입니다.', requestId), 400, headers);
+  try {
+    await recordEvent(env, event);
+  } catch (error) {
+    console.error(JSON.stringify({ requestId, event: 'record_event_failed', type: event.type, error: String(error) }));
+  }
+  return new Response(null, { status: 204, headers });
+}
+
 async function handleRecent(env, requestId, headers) {
   try {
     return json({ posts: await recentPosts(env, { limit: RESULT_LIMIT }), requestId }, 200, { ...headers, ...PUBLIC_CACHE });
@@ -153,6 +175,7 @@ async function handleRecent(env, requestId, headers) {
  *   GET  /api/v1/posts/:postId/series   -> { postId, series }
  *   POST /api/v1/feedback               -> { ok }
  *   POST /api/v1/answer                 -> { query, answer, sources }
+ *   POST /api/v1/events                 -> 204 (page view / card click beacon)
  * Returns null for other paths so the main router can continue.
  */
 export async function handleApi(request, env, ctx, { pathname }, requestId, headers) {
@@ -163,9 +186,11 @@ export async function handleApi(request, env, ctx, { pathname }, requestId, head
     return json(errorBody('METHOD_NOT_ALLOWED', `Use ${method}`, requestId), 405, { ...headers, allow: method });
   }
 
-  if (env.SEARCH_LIMITER) {
+  // Beacons get their own budget so reading pages never eats into the search limit.
+  const limiter = pathname === EVENTS_PATH ? env.EVENTS_LIMITER : env.SEARCH_LIMITER;
+  if (limiter) {
     const ip = request.headers.get('cf-connecting-ip') ?? 'unknown';
-    const { success } = await env.SEARCH_LIMITER.limit({ key: ip });
+    const { success } = await limiter.limit({ key: ip });
     if (!success) return json(errorBody('RATE_LIMITED', '잠시 후 다시 시도해 주세요.', requestId), 429, headers);
   }
 
@@ -173,5 +198,6 @@ export async function handleApi(request, env, ctx, { pathname }, requestId, head
   if (pathname === RECENT_PATH) return handleRecent(env, requestId, headers);
   if (pathname === FEEDBACK_PATH) return handleFeedback(request, env, requestId, headers);
   if (pathname === ANSWER_PATH) return handleAnswer(request, env, ctx, requestId, headers);
+  if (pathname === EVENTS_PATH) return handleEvent(request, env, requestId, headers);
   return handleSearch(request, env, ctx, requestId, headers);
 }
