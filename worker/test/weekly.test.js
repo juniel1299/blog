@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import worker from '../src/index.js';
 import { ANSWER_MODEL } from '../src/answer.js';
-import { WEEKLY_CRON, buildWeekly, weekKey } from '../src/weekly.js';
+import { WEEKLY_CRON, buildAndPublish, buildWeekly, weekKey } from '../src/weekly.js';
 
 const TOKEN = 'a'.repeat(48);
 
@@ -47,6 +47,7 @@ function env({ llm = async () => ({ response: '이번 주 조회는 120회였어
           run: async () => {
             if (sql.includes('INSERT INTO weekly_insights')) stored.push(args);
           },
+          first: async () => null,
           all: async () => ({
             results: sql.includes('FROM weekly_insights')
               ? [{ week: '2026-10-26', summary: '요약', report: JSON.stringify({ summary: { views: 1 } }), created_at: 'x' }]
@@ -106,6 +107,26 @@ describe('buildWeekly', () => {
   });
 });
 
+describe('buildAndPublish', () => {
+  const NOW = new Date('2026-10-26T00:00:00Z');
+
+  test('without Notion settings the week is stored and Notion is skipped', async () => {
+    const e = env();
+    const week = await buildAndPublish(e, NOW, loaders, vi.fn());
+    expect(week.notion).toEqual({ skipped: true });
+    expect(e.stored).toHaveLength(1);
+  });
+
+  test('a Notion failure is reported but the week stays stored', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const e = { ...env(), NOTION_TOKEN: 'ntn_test', NOTION_PARENT_PAGE_ID: 'parent' };
+    const fetchImpl = vi.fn(async () => new Response('{}', { status: 500 }));
+    const week = await buildAndPublish(e, NOW, loaders, fetchImpl);
+    expect(week.notion).toEqual({ error: '노션으로 보내지 못했어요.' });
+    expect(e.stored).toHaveLength(1);
+  });
+});
+
 describe('weekly cron and admin API', () => {
   test('the Monday cron builds the weekly insight and skips the ingest run', async () => {
     const e = env();
@@ -120,7 +141,7 @@ describe('weekly cron and admin API', () => {
   test('GET /admin/weekly lists stored weeks with parsed reports', async () => {
     const res = await worker.fetch(new Request('https://api.test/admin/weekly', { headers: { authorization: `Bearer ${TOKEN}` } }), env(), {});
     expect(res.status).toBe(200);
-    expect((await res.json()).weeks).toEqual([{ week: '2026-10-26', summary: '요약', report: { summary: { views: 1 } }, createdAt: 'x' }]);
+    expect((await res.json()).weeks).toEqual([{ week: '2026-10-26', summary: '요약', report: { summary: { views: 1 } }, notionUrl: null, createdAt: 'x' }]);
   });
 
   test('without the token the weekly API is hidden', async () => {

@@ -2,6 +2,7 @@
 // week (migrations/0006_weekly_insights.sql). Made by the Monday cron or POST /admin/weekly.
 import { ANSWER_MODEL } from './answer.js';
 import { insights } from './insights.js';
+import { pushWeekly } from './notion.js';
 import { topicReport } from './topics.js';
 
 // Cloudflare cron is UTC: Monday 00:00 UTC = Monday 09:00 KST. Must match wrangler.jsonc.
@@ -37,7 +38,7 @@ export function weekKey(now) {
 
 /** The part of the 7-day report worth keeping and showing the model. */
 function compactReport(report, topics) {
-  const post = ({ title, views, change, readRate }) => ({ title, views, change, readRate });
+  const post = ({ title, url, views, change, readRate }) => ({ title, url, views, change, readRate });
   return {
     summary: report.summary,
     topPosts: report.posts.slice(0, 5).map(post),
@@ -93,8 +94,29 @@ export async function buildWeekly(env, now = new Date(), loaders = { insights, t
 
 /** Latest weeks first. */
 export async function listWeekly(env, limit = HISTORY_LIMIT) {
-  const { results } = await env.DB.prepare('SELECT week, summary, report, created_at FROM weekly_insights ORDER BY week DESC LIMIT ?')
-    .bind(limit)
-    .all();
-  return results.map((row) => ({ week: row.week, summary: row.summary, report: JSON.parse(row.report), createdAt: row.created_at }));
+  const { results } = await env.DB.prepare(
+    'SELECT week, summary, report, notion_url, created_at FROM weekly_insights ORDER BY week DESC LIMIT ?',
+  ).bind(limit).all();
+  return results.map((row) => ({
+    week: row.week,
+    summary: row.summary,
+    report: JSON.parse(row.report),
+    notionUrl: row.notion_url ?? null,
+    createdAt: row.created_at,
+  }));
+}
+
+/**
+ * Builds this week's insight and sends it to Notion (when configured). A Notion failure is logged and
+ * reported, never lost: the week is already stored and can be re-sent with POST /admin/weekly.
+ */
+export async function buildAndPublish(env, now = new Date(), loaders = undefined, fetchImpl = fetch) {
+  const week = await buildWeekly(env, now, loaders);
+  try {
+    const notion = await pushWeekly(env, week, fetchImpl);
+    return { ...week, notion };
+  } catch (error) {
+    console.error(JSON.stringify({ event: 'weekly_notion_failed', week: week.week, error: String(error) }));
+    return { ...week, notion: { error: '노션으로 보내지 못했어요.' } };
+  }
 }

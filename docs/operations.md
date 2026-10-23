@@ -30,6 +30,8 @@
 | 이름 | 위치 | 용도 |
 |---|---|---|
 | `ADMIN_TOKEN` | Worker secret (`wrangler secret put`), 로컬 `worker/.dev.vars`(git 제외) | 관리자 API. 32자 미만이면 관리자 API 전체가 꺼짐 |
+| `NOTION_TOKEN` | Worker secret | 주간 인사이트를 노션에 보내는 내부 통합 토큰. 없으면 노션 전송만 건너뜀 |
+| `NOTION_PARENT_PAGE_ID` | Worker secret | 주간 페이지를 모을 노션 페이지 ID (그 페이지에 통합을 연결해야 함) |
 | `BLOG`, `FLARE` | GitHub Actions 저장소 시크릿 | 배포 |
 
 배포로 Worker secret은 바뀌지 않는다. 저장소가 public이므로 비밀값은 파일에 쓰지 않는다 ([security.md](security.md)).
@@ -55,6 +57,18 @@ curl -H "authorization: Bearer $(sed -n 's/^ADMIN_TOKEN=//p' worker/.dev.vars)" 
 # 검색 품질 (배포본 대상)
 npm run eval:search -w worker
 ```
+
+## 노션 주간 리포트 설정 (한 번만)
+
+1. https://www.notion.so/profile/integrations 에서 **새 내부 통합**을 만든다. 기능은 "콘텐츠 업데이트"와 "콘텐츠 삽입"만 켠다
+2. 리포트를 모을 노션 페이지를 하나 만들고, 오른쪽 위 `···` → **연결** → 방금 만든 통합을 추가한다
+3. 그 페이지 링크 끝의 32자리가 페이지 ID
+4. 터미널에서 직접 입력 (토큰은 채팅이나 파일에 붙여넣지 않는다):
+   ```bash
+   cd worker && npx wrangler secret put NOTION_TOKEN
+   npx wrangler secret put NOTION_PARENT_PAGE_ID
+   ```
+5. 대시보드 → 주간 인사이트 → "이번 주 요약 지금 만들기"로 확인. 이후 매주 월요일 09:00 KST에 자동으로 `YYYY-MM-DD 주간 인사이트` 하위 페이지가 생긴다 (같은 주를 다시 만들면 같은 페이지를 다시 씀)
 
 ## 작업별 절차
 

@@ -2,7 +2,7 @@ import { errorBody, json } from './http.js';
 import { feedbackReport } from './feedback.js';
 import { insights } from './insights.js';
 import { topicReport } from './topics.js';
-import { buildWeekly, listWeekly } from './weekly.js';
+import { buildAndPublish, listWeekly } from './weekly.js';
 import { readPost, runIngest } from './ingest/run.js';
 import { RETENTION_DAYS, topMisses } from './misses.js';
 import { similarScores } from './posts.js';
@@ -54,7 +54,7 @@ export async function handleAdmin(request, env, { pathname, searchParams }, requ
       return json({ weeks: await listWeekly(env), requestId }, 200, { ...headers, 'cache-control': 'no-store' });
     }
     if (request.method === 'POST' && pathname === '/admin/weekly') {
-      return json({ ...(await buildWeekly(env)), requestId }, 200, headers);
+      return json({ ...(await buildAndPublish(env)), requestId }, 200, headers);
     }
     if (request.method === 'GET' && ['/admin/misses', '/admin/feedback', '/admin/insights', '/admin/insights/topics'].includes(pathname)) {
       const days = Number(searchParams.get('days') ?? 30);
