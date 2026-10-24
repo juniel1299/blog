@@ -610,4 +610,6 @@ body:has(.menu_toolbar) .toc { top: 120px; max-height: calc(100vh - 144px); }
   .aia { left: 16px; bottom: 16px; }
   .aia-panel { position: fixed; left: 8px; right: 8px; top: 72px; bottom: 84px; width: auto; height: auto; max-height: none; }
   .top-button { right: 16px; bottom: 16px; }
+  /* iOS Safari zooms the page when an input under 16px is focused. */
+  .aia-form input, .search input { font-size: 16px; }
 }
