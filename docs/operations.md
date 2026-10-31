@@ -32,6 +32,7 @@
 | `ADMIN_TOKEN` | Worker secret (`wrangler secret put`), 로컬 `worker/.dev.vars`(git 제외) | 관리자 API. 32자 미만이면 관리자 API 전체가 꺼짐 |
 | `NOTION_TOKEN` | Worker secret | 주간 인사이트를 노션에 보내는 내부 통합 토큰. 없으면 노션 전송만 건너뜀 |
 | `NOTION_PARENT_PAGE_ID` | Worker secret | 주간 페이지를 모을 노션 페이지 ID (그 페이지에 통합을 연결해야 함) |
+| `GSC_CLIENT_EMAIL`, `GSC_PRIVATE_KEY`, `GSC_SITE` | Worker secret | Search Console 서비스 계정 (읽기 전용 범위). 없으면 구글 검색 동기화만 건너뜀 |
 | `BLOG`, `FLARE` | GitHub Actions 저장소 시크릿 | 배포 |
 
 배포로 Worker secret은 바뀌지 않는다. 저장소가 public이므로 비밀값은 파일에 쓰지 않는다 ([security.md](security.md)).
@@ -69,6 +70,19 @@ npm run eval:search -w worker
    npx wrangler secret put NOTION_PARENT_PAGE_ID
    ```
 5. 대시보드 → 주간 인사이트 → "이번 주 요약 지금 만들기"로 확인. 이후 매주 월요일 09:00 KST에 자동으로 `YYYY-MM-DD 주간 인사이트` 하위 페이지가 생긴다 (같은 주를 다시 만들면 같은 페이지를 다시 씀)
+
+## Search Console 연결 (한 번만)
+
+1. https://search.google.com/search-console → 속성 추가 → **URL 접두어** `https://problem-child.tistory.com/` → 소유 확인 (티스토리 관리 → 플러그인의 구글 서치 콘솔 연동, 또는 HTML 태그를 스킨 `<head>`에)
+2. https://console.cloud.google.com → 새 프로젝트 → API 및 서비스 → 라이브러리 → **Google Search Console API** 사용 → 사용자 인증 정보 → **서비스 계정** 만들기(역할 없음) → 키 → **JSON 키** 만들기
+3. Search Console → 설정 → 사용자 및 권한 → 사용자 추가 → 서비스 계정 이메일(`…@….iam.gserviceaccount.com`), 권한 **제한됨**
+4. 터미널에서 JSON 파일의 값을 직접 입력 (파일은 커밋하지 말고 입력 후 지운다):
+   ```bash
+   cd worker && npx wrangler secret put GSC_CLIENT_EMAIL   # client_email
+   npx wrangler secret put GSC_PRIVATE_KEY                # private_key 값 전체 (-----BEGIN ... END-----, \n 그대로 괜찮음)
+   npx wrangler secret put GSC_SITE                       # https://problem-child.tistory.com/
+   ```
+5. 확인: `curl -X POST -H "authorization: Bearer …" <Worker>/admin/gsc/sync` → `{ rows, start, end }`. 이후 매일 06:00 KST 크론이 최근 7일을 다시 받아온다 (구글은 2~3일 늦게 확정)
 
 ## 작업별 절차
 

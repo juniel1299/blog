@@ -41,6 +41,20 @@ describe('weeklyBlocks', () => {
     expect(blocks.some((b) => b.type === 'paragraph' && text(b) === '없음')).toBe(true);
   });
 
+  test('a week with Search Console data gets a Google search section', () => {
+    const google = {
+      totals: { clicks: 12, impressions: 600, ctr: 0.02, position: 8.4 },
+      topQueries: [{ query: '자바 상속', clicks: 9, impressions: 120, ctr: 0.075, position: 3.3 }],
+      lowCtr: [{ query: '오라클 인덱스 단점', clicks: 0, impressions: 300, ctr: 0, position: 6 }],
+    };
+    const lines = weeklyBlocks({ ...WEEK, report: { ...WEEK.report, google } }, 'https://api/dashboard/').map((b) => text(b));
+    expect(lines).toContain('구글 검색');
+    expect(lines).toContain('클릭 12 · 노출 600 · 클릭률 2% · 평균 8.4위');
+    expect(lines).toContain('자바 상속 · 클릭 9 · 노출 120 · 평균 3.3위');
+    expect(lines).toContain('오라클 인덱스 단점 · 클릭 0 · 노출 300 · 평균 6위');
+    expect(weeklyBlocks(WEEK, 'https://api/dashboard/').map((b) => text(b))).not.toContain('구글 검색');
+  });
+
   test("rich text is cut at Notion's 2000-character limit", () => {
     const blocks = weeklyBlocks({ ...WEEK, summary: '가'.repeat(2500) }, 'https://api/dashboard/');
     expect(text(blocks[0])).toHaveLength(2000);

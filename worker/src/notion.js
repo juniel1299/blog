@@ -19,6 +19,19 @@ function list(title, items, toBullet) {
   return [heading(title), ...(items.length ? items.map(toBullet) : [paragraph(rt('없음'))])];
 }
 
+/** Google search section (weeks stored before Search Console was connected have none). */
+function googleBlocks(google) {
+  if (!google) return [];
+  const t = google.totals;
+  const query = (q) => bullet(rt(`${q.query} · 클릭 ${q.clicks} · 노출 ${q.impressions} · 평균 ${q.position}위`));
+  return [
+    heading('구글 검색'),
+    bullet(rt(`클릭 ${t.clicks} · 노출 ${t.impressions} · 클릭률 ${percent(t.ctr)} · 평균 ${t.position}위`)),
+    ...list('구글 검색어', google.topQueries, query),
+    ...list('노출은 많은데 클릭이 적은 검색어 (제목·설명 개선 후보)', google.lowCtr, query),
+  ];
+}
+
 /** Page content for one stored week ({ week, summary, report } from weekly.js). */
 export function weeklyBlocks({ summary, report }, dashboardUrl) {
   const s = report.summary;
@@ -36,6 +49,7 @@ export function weeklyBlocks({ summary, report }, dashboardUrl) {
     ...list('다음 글 후보', report.gaps, (g) =>
       bullet(rt(`${g.label} · ${g.typeLabel} · 질문 ${g.count}회${g.nearestPost ? ` · 가까운 글: ${g.nearestPost}` : ''}`)),
     ),
+    ...googleBlocks(report.google),
     paragraph(rt('대시보드에서 자세히 보기', dashboardUrl)),
   ];
 }

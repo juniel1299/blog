@@ -19,6 +19,7 @@
 
 - 저장소는 **public**이다. 비밀값을 파일(특히 `ci.yml`)에 쓰지 않는다
 - `ADMIN_TOKEN`: Worker secret + 로컬 `worker/.dev.vars`(`.gitignore`)
+- `GSC_CLIENT_EMAIL`, `GSC_PRIVATE_KEY`, `GSC_SITE`: Worker secret. 범위는 `webmasters.readonly`, Search Console 사용자 권한은 "제한됨". JSON 키 파일은 secret에 넣은 뒤 지우고 커밋하지 않음. 오류 메시지에는 구글의 사유만 남기고 키는 쓰지 않음
 - `NOTION_TOKEN`, `NOTION_PARENT_PAGE_ID`: Worker secret. 통합은 "콘텐츠 업데이트·삽입"만, 리포트 페이지 하나에만 연결 (워크스페이스 전체 권한 아님). 노션 오류 메시지는 HTTP 상태만 남기고 토큰은 로그에 쓰지 않음
 - Cloudflare 토큰: GitHub 시크릿 `BLOG`. 최소 권한 ([operations.md](operations.md#cicd-githubworkflowsciyml)), Zone 권한 없음
 - 배포 잡은 토큰 형식(`Bearer `, 공백, 따옴표 포함 여부)만 확인하고 값을 출력하지 않는다. Actions는 시크릿을 로그에서 가린다

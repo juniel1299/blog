@@ -47,6 +47,9 @@ function compactReport(report, topics) {
     keywords: report.keywords.slice(0, 5).map(({ query, n }) => ({ query, n })),
     questions: report.questions.slice(0, 5).map(({ query, count, clickRate }) => ({ query, count, clickRate })),
     topics: topics.topics.slice(0, 5).map(({ label, count }) => ({ label, count })),
+    google: report.google
+      ? { totals: report.google.totals, topQueries: report.google.queries.slice(0, 5), lowCtr: report.google.lowCtr.slice(0, 5) }
+      : null,
     gaps: topics.gaps.slice(0, 5).map(({ label, count, type, nearest }) => ({
       label,
       count,

@@ -167,6 +167,19 @@ function topicSections(topics, days) {
   ];
 }
 
+function googleSections(google) {
+  if (!google || google.totals.impressions === 0) {
+    return [section('구글 검색', null, empty('Search Console 연결 전이거나 아직 데이터가 없어요. (구글은 2~3일 늦게 집계)'))];
+  }
+  const t = google.totals;
+  const rows = (list) => list.map((q) => [q.query, number(q.clicks), number(q.impressions), percent(q.ctr), `${q.position}위`]);
+  const headers = ['검색어', '클릭', '노출', '클릭률', '평균 순위'];
+  return [
+    section('구글 검색', `클릭 ${number(t.clicks)} · 노출 ${number(t.impressions)} · 클릭률 ${percent(t.ctr)} · 평균 ${t.position}위 (Search Console, 2~3일 늦게 집계)`, table(headers, rows(google.queries))),
+    section('노출은 많은데 클릭이 적은 검색어', '구글에 자주 보이지만 잘 안 눌리는 검색어: 글 제목·첫 문단을 이 검색어에 맞게 고칠 후보', table(headers, rows(google.lowCtr))),
+  ];
+}
+
 const change = (value) => el('span', { className: value > 0 ? 'up' : value < 0 ? 'down' : 'muted', text: value > 0 ? `+${value}` : String(value) });
 
 function render(report, topics, weeks, onBuild) {
@@ -187,7 +200,8 @@ function render(report, topics, weeks, onBuild) {
       section('유입 경로', null, bars(report.sources.map((s) => ({ label: SOURCE_LABELS[s.source] ?? s.source, n: s.n })))),
       section('다른 사이트에서 온 방문', null, bars(report.referrers.map((r) => ({ label: r.host, n: r.n })))),
     ]),
-    section('검색 유입 키워드', '네이버·다음·빙 등이 넘겨준 검색어 (구글은 검색어를 숨김)', table(
+    ...googleSections(report.google),
+    section('검색 유입 키워드', '네이버·다음·빙 등이 넘겨준 검색어 (구글 검색어는 위 Search Console 표)', table(
       ['검색어', '검색엔진', '방문'],
       report.keywords.map((k) => [k.query, SOURCE_LABELS[k.engine] ?? k.engine, number(k.n)]),
       [2],

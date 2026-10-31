@@ -1,5 +1,6 @@
 import { errorBody, json } from './http.js';
 import { feedbackReport } from './feedback.js';
+import { syncSearchConsole } from './gsc.js';
 import { insights } from './insights.js';
 import { topicReport } from './topics.js';
 import { buildAndPublish, listWeekly } from './weekly.js';
@@ -49,6 +50,9 @@ export async function handleAdmin(request, env, { pathname, searchParams }, requ
       if (!/^\d{1,9}$/.test(id)) return json(errorBody('INVALID_ID', 'id must be a post number', requestId), 400, headers);
       const scores = await similarScores(env, Number(id));
       return json({ id: Number(id), scores: scores?.slice(0, 10) ?? null, requestId }, 200, headers);
+    }
+    if (request.method === 'POST' && pathname === '/admin/gsc/sync') {
+      return json({ ...(await syncSearchConsole(env)), requestId }, 200, headers);
     }
     if (request.method === 'GET' && pathname === '/admin/weekly') {
       return json({ weeks: await listWeekly(env), requestId }, 200, { ...headers, 'cache-control': 'no-store' });
