@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/preact';
 import { ChatWidget } from '../src/widget/ChatWidget.jsx';
 import {
   SearchError,
@@ -112,7 +112,7 @@ describe('ChatWidget', () => {
     });
 
     expect(search).toHaveBeenLastCalledWith(API, '리액트 훅', { offset: 3 });
-    expect(screen.getByText('다음 글 1개예요.')).toBeTruthy();
+    expect(await screen.findByText('다음 글 1개예요.')).toBeTruthy();
     expect(screen.getByRole('link', { name: /^d/ })).toBeTruthy();
     expect(screen.queryByRole('button', { name: '더 보기' })).toBeNull();
   });
@@ -152,11 +152,11 @@ describe('ChatWidget', () => {
     const similar = vi.fn(async () => [card(95, 'useRef')]);
     await openWith({ currentPostId: 98, similar });
     expect(similar).toHaveBeenCalledWith(API, 98);
-    expect(screen.getByText('지금 읽는 글과 비슷한 글이에요.')).toBeTruthy();
+    expect(await screen.findByText('지금 읽는 글과 비슷한 글이에요.')).toBeTruthy();
 
     cleanup();
     await openWith({ currentPostId: 98, similar: async () => [], recent: async () => [card(1, 'new')] });
-    expect(screen.getByText('최근 글이에요.')).toBeTruthy();
+    expect(await screen.findByText('최근 글이에요.')).toBeTruthy();
   });
 
   test('"관련 문서" adds official doc links for that post, once', async () => {
@@ -172,7 +172,7 @@ describe('ChatWidget', () => {
     });
 
     expect(docs).toHaveBeenCalledWith(API, 123);
-    expect(screen.getByText("'map vs forEach' 관련 공식 문서예요.")).toBeTruthy();
+    expect(await screen.findByText("'map vs forEach' 관련 공식 문서예요.")).toBeTruthy();
     const link = screen.getByRole('link', { name: /리스트 렌더링/ });
     expect(link.getAttribute('href')).toBe('https://ko.react.dev/learn/rendering-lists');
     expect(link.getAttribute('target')).toBe('_blank');
@@ -185,7 +185,7 @@ describe('ChatWidget', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: "'입사 일기' 관련 공식 문서 보기" }));
     });
-    expect(screen.getByText('이 글과 연결된 공식 문서가 아직 없어요.')).toBeTruthy();
+    expect(await screen.findByText('이 글과 연결된 공식 문서가 아직 없어요.')).toBeTruthy();
   });
 
   test('👍/👎 sends the question, vote and shown posts once, then thanks', async () => {
@@ -256,8 +256,8 @@ describe('ChatWidget', () => {
     const search = vi.fn(async () => page([card(1, 'A')]));
     await openWith({ answer, search });
     await ask('useEffect는 언제 실행돼?');
+    expect(await screen.findByText('관련 글 1개를 찾았어요.')).toBeTruthy();
     expect(search).toHaveBeenCalledWith(API, 'useEffect는 언제 실행돼?');
-    expect(screen.getByText('관련 글 1개를 찾았어요.')).toBeTruthy();
   });
 
   test('clicking a result records which post, its rank, where it was shown and the question', async () => {

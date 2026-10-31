@@ -89,6 +89,7 @@ Fixture는 실제 티스토리 렌더링을 흉내낼 뿐이다. 치환자 동�
 
 - 첫 열기: 글 본문 페이지면 비슷한 글, 아니면 최근 글 3개 + 예시 질문 버튼 4개
 - 질문 → 결과 카드(카테고리, 한 줄 미리보기, 제목 새 탭 링크, [관련 문서]) + [더 보기]
-- 링크는 `http(s)`만 표시 (`isSafeUrl`), 모든 텍스트는 React로 이스케이프
+- 링크는 `http(s)`만 표시 (`isSafeUrl`), 모든 텍스트는 JSX로 이스케이프
+- 위젯 코드는 React 문법이지만 `vite.config.js`의 별칭으로 Preact(`preact/compat`)에 묶인다. 테스트는 `@testing-library/preact`. Preact는 상태 변경을 비동기로 그려서, 클릭 뒤 비동기 결과는 `findBy…`로 기다린다
 - Esc로 닫고 포커스를 버튼으로 돌려줌, 응답 영역 `aria-live="polite"`
 - API 주소가 없으면(`data-api-base=""`) "준비 중" 표시, 입력 비활성

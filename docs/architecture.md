@@ -32,7 +32,7 @@
 |---|---|---|
 | 스킨 | `skin/tistory/skin.html`, `skin/src/styles/` | 티스토리 치환자 템플릿 + 디자인. 빌드 시 그대로 복사 ([skin.md](skin.md)) |
 | 스킨 스크립트 | `skin/src/scripts/` | 테마 전환, 목차, 맨 위로, 읽기 진행바 |
-| 챗봇 위젯 | `skin/src/widget/` | React 19. `#ai-assistant`에 한 번만 마운트, `data-api-base`로 API 주소 받음 |
+| 챗봇 위젯 | `skin/src/widget/` | React 코드 그대로 Preact(`preact/compat` 별칭)로 번들, `script.js` 41KB (React 때 241KB). `#ai-assistant`에 한 번만 마운트, `data-api-base`로 API 주소 받음 |
 | 공개 API | `worker/src/api.js` | 검색, 답변, 최근 글, 비슷한 글, 시리즈, 관련 문서, 피드백 ([api-contract.md](api-contract.md)) |
 | 답변 모드 | `worker/src/answer.js` | 검색 상위 3개 글을 근거로 Workers AI가 출처 번호 붙은 짧은 답 ([ADR 0008](adr/0008-answer-mode-workers-ai.md)) |
 | 검색 | `worker/src/search/` | 질문 해석, 키워드+의미 검색, RRF, 미리보기 ([rag-design.md](rag-design.md)) |
