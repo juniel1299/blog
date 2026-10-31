@@ -9,6 +9,7 @@
     "zip": "npm run build && cd dist/tistory && zip -r ../tistory-skin.zip ."
   },
   "dependencies": {
+    "highlight.js": "^11.12.0",
     "preact": "^10.29.8"
   },
   "devDependencies": {

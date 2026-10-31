@@ -257,6 +257,15 @@ a.chip:hover { text-decoration: none; filter: brightness(1.05); }
   font-size: 0.9rem; line-height: 1.65;
 }
 .post-body pre code { background: none; color: inherit; padding: 0; font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace; }
+/* Code colors (highlight.js tokens) on the dark code background, same in light and dark mode. */
+.post-body .hljs-keyword, .post-body .hljs-selector-tag, .post-body .hljs-meta .hljs-keyword { color: #ff7b72; }
+.post-body .hljs-string, .post-body .hljs-regexp, .post-body .hljs-selector-attr { color: #a5d6ff; }
+.post-body .hljs-comment, .post-body .hljs-quote { color: #8b949e; font-style: italic; }
+.post-body .hljs-number, .post-body .hljs-literal, .post-body .hljs-attr, .post-body .hljs-attribute, .post-body .hljs-variable.language_ { color: #79c0ff; }
+.post-body .hljs-title, .post-body .hljs-title.function_, .post-body .hljs-title.class_, .post-body .hljs-section { color: #d2a8ff; }
+.post-body .hljs-type, .post-body .hljs-built_in, .post-body .hljs-symbol { color: #ffa657; }
+.post-body .hljs-name, .post-body .hljs-tag, .post-body .hljs-selector-class, .post-body .hljs-selector-id { color: #7ee787; }
+.post-body .hljs-meta { color: #8b949e; }
 
 .post-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 48px 0 0; font-size: 0; }
 .post-tags a {

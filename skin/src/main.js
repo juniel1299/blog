@@ -17,7 +17,7 @@ function start() {
   const article = document.getElementById('article-body');
   initToc(document.querySelector('[data-toc]'), article);
   initReadProgress(document.querySelector('[data-read-progress]'), article);
-  initCodeBlocks(article);
+  initCodeBlocks(article, navigator.clipboard, document.querySelector('.post-header .chip')?.textContent ?? '');
   initPostMeta(document.querySelector('.post-meta'), article);
   const assistant = document.getElementById('ai-assistant');
   const apiBase = assistant?.dataset.apiBase ?? '';

@@ -52,6 +52,7 @@ Vite 라이브러리 모드(IIFE, 고정 파일명). 티스토리는 스킨 파�
 - **댓글 다크 모드**: 티스토리 댓글 앱은 라이트 색상 고정 → `.tt-link-user`, `.tt_desc`, `.tt_date` 색을 토큰으로 덮어씀
 - **방문자용 티스토리 툴바**(`.menu_toolbar`, 블로그 이름 + 구독하기): 티스토리가 `top:20px; right:20px`에 고정해 헤더 검색창을 가렸다 → `top: 77px`(헤더 65px 아래)로 내리고, 툴바가 있을 때만(`body:has(.menu_toolbar)`) 목차 sticky 위치를 120px로. 로그인한 주인에게는 툴바가 안 나오고, 폭 900px 이하에서는 티스토리가 스스로 숨긴다.
 - **본문에 끼워 넣는 요소**: 광고 스크립트, 공감/공유 버튼(`.container_postbtn`), "카테고리의 다른 글"(`.another_category`). 목차는 이 블록들(`.another_category`, `.container_postbtn`, `.tt_box_namecard`) 안의 제목을 건너뛴다.
+- **코드 블록** (`scripts/code-blocks.js`): 언어 라벨 + 복사 버튼 + highlight.js 문법 강조. 새 에디터의 `data-ke-language`만 믿고, 옛 에디터의 class(`routeros`, `abnf` 등, 자주 틀림)는 무시한다. 라벨이 없으면 글 카테고리로 후보를 좁혀 추측한다 (java → Java만, SQL → SQL만, JS/React/Next → JS·HTML·bash·JSON, AI → bash·JSON·JS·Python, 그 외 전체). 실측(블로그 코드 190개): 오분류 0, 텍스트 다이어그램은 점수가 낮아(5 미만) 색 없이 둔다. 번들에는 이 8개 언어만 (TypeScript는 JS 문법으로 충분해 제외)
 - **글 끝 "이 글과 비슷한 글"**: 이전/다음 글 위에 비슷한 글 3개 (`scripts/similar.js`, `/api/v1/posts/:id/similar`). 없거나 API 실패면 아무것도 안 그림.
 - **로그인 상태의 `$ is not a function`**: 티스토리 `common.js`의 `toggleAdminLayer()`가 jQuery로 옛 스킨의 관리 메뉴(`.btn_etc`)를 찾는 코드. 방문자에게는 티스토리가 jQuery를 넣어 오류가 없고, 이 스킨엔 `.btn_etc`가 없어 동작 영향 없음. 주인만 보는 콘솔 오류라 jQuery(약 30KB)를 모두에게 싣지 않고 둔다.
   수집기는 이것들을 빼고 본문만 색인한다
