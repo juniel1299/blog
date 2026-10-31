@@ -70,6 +70,16 @@ seed에서 행을 지워도 DB에서 지워지지 않는다 → 삭제는 `wrang
 
 결과 0건 질문은 계속 `search_misses`에만. 헤더 검색은 타이핑 중 글자라 질문으로 기록하지 않고, 클릭할 때 `result_clicks.query`로 남는다. 전체 리퍼러 URL은 저장하지 않는다.
 
+### gsc_rows (0008)
+
+| 컬럼 | 설명 |
+|---|---|
+| date, query, page | PK. Search Console의 날짜(태평양 시간), 검색어, 노출된 블로그 URL |
+| post_id | URL에서 뽑은 글 번호 (`/98`, `/m/98`), 홈·카테고리는 null |
+| clicks, impressions, position | 그날의 클릭, 노출, 평균 순위 |
+
+구글이 집계한 값이라 방문자 정보 없음. 매일 최근 7일을 지우고 다시 넣음(구글이 최근 값을 계속 고침), 90일 지난 행 삭제.
+
 ### weekly_insights (0006)
 
 | 컬럼 | 설명 |

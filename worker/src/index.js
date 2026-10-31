@@ -4,6 +4,7 @@ import { corsHeaders, errorBody, json } from './http.js';
 import { runIngest } from './ingest/run.js';
 import { purgeOldEvents } from './events.js';
 import { purgeOldFeedback } from './feedback.js';
+import { GSC_CRON, purgeOldSearchConsole, syncSearchConsole } from './gsc.js';
 import { purgeOldMisses } from './misses.js';
 import { WEEKLY_CRON, buildAndPublish } from './weekly.js';
 
@@ -45,8 +46,17 @@ export default {
     return json(errorBody('NOT_FOUND', 'Not found', requestId), 404, headers);
   },
 
-  /** Cron triggers: Monday weekly insight (WEEKLY_CRON); otherwise one incremental sync pass (see docs/architecture.md, 수집) + miss/feedback/analytics log retention. */
+  /** Cron triggers: daily Search Console sync (GSC_CRON); Monday weekly insight (WEEKLY_CRON); otherwise one incremental sync pass (see docs/architecture.md, 수집) + miss/feedback/analytics log retention. */
   async scheduled(controller, env, ctx) {
+    if (controller.cron === GSC_CRON) {
+      ctx.waitUntil(
+        Promise.all([syncSearchConsole(env), purgeOldSearchConsole(env)]).then(
+          ([sync]) => console.log(JSON.stringify({ event: 'gsc_synced', ...sync })),
+          (error) => console.error(JSON.stringify({ event: 'gsc_sync_failed', error: String(error) })),
+        ),
+      );
+      return;
+    }
     if (controller.cron === WEEKLY_CRON) {
       ctx.waitUntil(
         buildAndPublish(env).then(

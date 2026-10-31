@@ -2,6 +2,7 @@
 // with posts compared to the period before. Reads only the anonymous tables from migration 0005 plus
 // the existing zero-result and feedback logs.
 import { feedbackReport } from './feedback.js';
+import { googleReport } from './gsc.js';
 import { topMisses } from './misses.js';
 
 const LIST_LIMIT = 20;
@@ -83,7 +84,7 @@ export async function insights(env, days) {
   const before = `-${days * 2} days`;
   // Bind only the parameters each query uses: SQLite rejects extra bindings.
   const all = (sql, ...args) => env.DB.prepare(sql).bind(...(args.length ? args : [now])).all().then((r) => r.results);
-  const [summary, daily, posts, prev, postClicks, sources, referrers, keywords, questions, queryClicks, clickSources, misses, feedback] =
+  const [summary, daily, posts, prev, postClicks, sources, referrers, keywords, questions, queryClicks, clickSources, misses, feedback, google] =
     await Promise.all([
       env.DB.prepare(SQL.summary).bind(now).first(),
       all(SQL.daily),
@@ -98,6 +99,7 @@ export async function insights(env, days) {
       all(SQL.click_sources),
       topMisses(env, days),
       feedbackReport(env, days),
+      googleReport(env, days),
     ]);
 
   const postList = shapePosts(posts, prev, postClicks);
@@ -136,5 +138,6 @@ export async function insights(env, days) {
       .filter((row) => row.down > 0)
       .slice(0, LIST_LIMIT)
       .map(({ query, down, up }) => ({ query, down, up })),
+    google,
   };
 }

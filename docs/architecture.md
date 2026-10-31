@@ -41,6 +41,7 @@
 | 수집 | `worker/src/ingest/` | 사이트맵 비교 → 글 추출 → 청크 → 임베딩 → 저장 |
 | 관리자 | `worker/src/admin.js` | 수동 수집, 추출 미리보기, 점수 디버그, 0건 질문 |
 | 0건 로그 | `worker/src/misses.js` | 결과 없는 질문 텍스트만 저장, 90일 보관 |
+| Search Console | `worker/src/gsc.js` | 서비스 계정 JWT(WebCrypto 서명)로 구글 검색어·노출·순위를 매일 06:00 KST에 수집, 대시보드·주간 리포트에 표시 |
 | 노션 주간 리포트 | `worker/src/notion.js` | 주간 인사이트를 노션 페이지(주마다 하위 페이지)로 전송, 같은 주는 같은 페이지를 다시 씀 |
 | 인사이트 분석 | `worker/src/topics.js`, `worker/src/weekly.js` | 질문 주제 묶기, 다음 글 후보(콘텐츠 공백), 월요일 09:00 KST 주간 AI 요약 |
 | 인사이트 대시보드 | `worker/public/dashboard/`, `worker/src/insights.js` | Workers Static Assets로 `/dashboard/` 제공, 데이터는 `GET /admin/insights` (관리자 토큰) |

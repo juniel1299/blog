@@ -33,5 +33,6 @@
   ],
   // Incremental sync: each run re-indexes at most 3 changed posts (free-plan CPU/subrequest limits).
   // Weekly insight: Monday 00:00 UTC = 09:00 KST (src/weekly.js WEEKLY_CRON, must match).
-  "triggers": { "crons": ["*/10 * * * *", "0 0 * * MON"] }
+  // Search Console sync: daily 21:00 UTC = 06:00 KST (src/gsc.js GSC_CRON, must match).
+  "triggers": { "crons": ["*/10 * * * *", "0 0 * * MON", "0 21 * * *"] }
 }
