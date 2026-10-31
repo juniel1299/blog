@@ -6,6 +6,15 @@ import react from '@vitejs/plugin-react';
 // Tistory substitution tags ([##_..._##], <s_...>) are never touched by the bundler.
 export default defineConfig({
   plugins: [react()],
+  // Preact's React-compatible layer: same widget code, ~1/4 of React's size in the bundle.
+  resolve: {
+    alias: {
+      react: 'preact/compat',
+      'react-dom/client': 'preact/compat/client',
+      'react-dom': 'preact/compat',
+      'react/jsx-runtime': 'preact/jsx-runtime',
+    },
+  },
   publicDir: 'tistory',
   define: { 'process.env.NODE_ENV': JSON.stringify('production') },
   build: {

@@ -9,12 +9,12 @@
     "zip": "npm run build && cd dist/tistory && zip -r ../tistory-skin.zip ."
   },
   "dependencies": {
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "highlight.js": "^11.12.0",
+    "preact": "^10.29.8"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",
-    "@testing-library/react": "^16.3.3",
+    "@testing-library/preact": "^3.2.4",
     "@vitejs/plugin-react": "^6.1.2",
     "jsdom": "^26.1.0",
     "vite": "^8.3.4",

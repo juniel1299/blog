@@ -17,7 +17,7 @@ describe('code blocks', () => {
     initCodeBlocks(article, clipboard);
 
     expect(article.querySelectorAll('.code-block')).toHaveLength(1);
-    expect(article.querySelector('.code-lang').textContent).toBe('javascript');
+    expect(article.querySelector('.code-lang').textContent).toBe('JavaScript');
     expect(article.querySelector('pre').textContent).toBe('const a = 1;');
 
     const button = article.querySelector('.code-copy');
@@ -35,6 +35,50 @@ describe('code blocks', () => {
     await new Promise((r) => setTimeout(r, 0));
     expect(button.textContent).toBe('복사 실패');
     expect(document.querySelector('.code-lang').textContent).toBe('');
+  });
+
+  test('highlights code in the language the editor declared, keeping the text', () => {
+    document.body.innerHTML = '<div id="a"><pre data-ke-language="javascript"><code>const a = "x"; // c</code></pre></div>';
+    initCodeBlocks(document.getElementById('a'));
+    const code = document.querySelector('pre code');
+    expect(code.classList.contains('hljs')).toBe(true);
+    expect(code.querySelector('.hljs-keyword').textContent).toBe('const');
+    expect(code.querySelector('.hljs-string').textContent).toBe('"x"');
+    expect(code.textContent).toBe('const a = "x"; // c');
+  });
+
+  test("ignores the old editor's wrong class names and guesses from the code within the post's category", () => {
+    const java = 'String hello1 = "안녕";\nSystem.out.println(hello1);\npublic static void main(String[] args) { int sum = 0; }';
+    document.body.innerHTML = `<div id="a"><pre class="angelscript"><code>${java}</code></pre></div>`;
+    initCodeBlocks(document.getElementById('a'), undefined, 'java');
+    expect(document.querySelector('.code-lang').textContent).toBe('Java');
+    expect(document.querySelector('pre code').textContent).toBe(java);
+  });
+
+  test('code that looks like HTML stays text', () => {
+    const src = '<script>alert(1)</script><img src=x onerror=alert(2)>';
+    const pre = document.createElement('pre');
+    pre.setAttribute('data-ke-language', 'xml');
+    pre.textContent = src;
+    document.body.innerHTML = '<div id="a"></div>';
+    document.getElementById('a').append(pre);
+    initCodeBlocks(document.getElementById('a'));
+    expect(document.querySelector('#a script, #a img')).toBeNull();
+    expect(pre.textContent).toBe(src);
+  });
+
+  test('in a single-language category even one short line is highlighted', () => {
+    document.body.innerHTML = '<div id="a"><pre class="abnf"><code>long l1 = 3000000000L;</code></pre></div>';
+    initCodeBlocks(document.getElementById('a'), undefined, 'java');
+    expect(document.querySelector('.code-lang').textContent).toBe('Java');
+    expect(document.querySelector('pre code .hljs-type, pre code .hljs-keyword')).not.toBeNull();
+  });
+
+  test('too little code to tell gets no label and no colors', () => {
+    document.body.innerHTML = '<div id="a"><pre class="routeros"><code>hello</code></pre></div>';
+    initCodeBlocks(document.getElementById('a'));
+    expect(document.querySelector('.code-lang').textContent).toBe('');
+    expect(document.querySelector('pre code').innerHTML).toBe('hello');
   });
 });
 

@@ -8,7 +8,7 @@
 ## 구조
 
 ```
-skin/      Tistory 스킨 (Vite) + React 챗봇 위젯
+skin/      Tistory 스킨 (Vite) + 챗봇 위젯 (React 문법, Preact로 번들)
   tistory/   skin.html, index.xml 원본 (빌드 시 그대로 복사)
   src/       테마 토글, 목차, 맨 위로 버튼, 위젯
   index.html 로컬 개발용 Fixture 페이지
