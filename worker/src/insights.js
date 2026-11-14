@@ -11,6 +11,8 @@ const MIN_RISING_VIEWS = 2; // a single visit is noise, not a trend
 // Dates are grouped in Korean time.
 const KST = '+9 hours';
 
+// A tab left open for hours is one visit, not hours of reading: cap each visit in averages.
+const MAX_COUNTED_SECONDS = 1800;
 const round = (value, digits = 0) => Number((value ?? 0).toFixed(digits));
 const rate = (part, whole) => (whole ? round(part / whole, 2) : 0);
 
@@ -18,7 +20,7 @@ const SQL = {
   summary: `/* summary */ SELECT
     (SELECT count(*) FROM page_views WHERE created_at >= datetime('now', ?1)) AS views,
     (SELECT count(*) FROM page_views WHERE created_at >= datetime('now', ?1) AND post_id IS NOT NULL) AS post_views,
-    (SELECT avg(seconds) FROM page_views WHERE created_at >= datetime('now', ?1)) AS avg_seconds,
+    (SELECT avg(min(seconds, ${MAX_COUNTED_SECONDS})) FROM page_views WHERE created_at >= datetime('now', ?1)) AS avg_seconds,
     (SELECT avg(depth) FROM page_views WHERE created_at >= datetime('now', ?1) AND post_id IS NOT NULL) AS avg_depth,
     (SELECT sum(depth >= 75) FROM page_views WHERE created_at >= datetime('now', ?1) AND post_id IS NOT NULL) AS read_through,
     (SELECT count(*) FROM search_queries WHERE created_at >= datetime('now', ?1)) AS questions,
@@ -26,7 +28,7 @@ const SQL = {
     (SELECT count(*) FROM result_clicks WHERE created_at >= datetime('now', ?1)) AS clicks`,
   daily: `/* daily */ SELECT date(created_at, '${KST}') AS day, count(*) AS views
     FROM page_views WHERE created_at >= datetime('now', ?1) GROUP BY day ORDER BY day`,
-  posts: `/* posts */ SELECT v.post_id, p.title, p.url, count(*) AS views, avg(v.seconds) AS avg_seconds,
+  posts: `/* posts */ SELECT v.post_id, p.title, p.url, count(*) AS views, avg(min(v.seconds, ${MAX_COUNTED_SECONDS})) AS avg_seconds,
       avg(v.depth >= 75) AS read_rate
     FROM page_views v LEFT JOIN posts p ON p.id = v.post_id
     WHERE v.created_at >= datetime('now', ?1) AND v.post_id IS NOT NULL

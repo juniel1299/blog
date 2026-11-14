@@ -95,6 +95,10 @@
 
 `{ "postId", "series": { "name", "posts": [{ postId, title, url }] } | null, "requestId" }`: 제목이 `[이름] 7. …` 또는 `[이름] … - 2` 형식인 글의 시리즈(같은 이름, 회차 순, 2편 이상). 시리즈가 아니면 `series: null`, 색인되지 않은 글 404 `POST_NOT_FOUND`. 스킨이 글 머리 아래 시리즈 상자에 쓴다.
 
+### `GET /api/v1/posts/:postId/summary`
+
+`{ "postId", "summary": ["…", "…", "…"] | null, "requestId" }`: 글을 색인할 때 Workers AI가 만든 3줄 요약 (`posts.ai_summary`, 0009). 아직 없으면 null, 색인 안 된 글 404. 스킨이 글 머리 아래 "AI 3줄 요약"으로 보여준다. 관리자 `POST /admin/summaries?limit=1~20`이 요약 없는 글을 채운다 (`{ done, remaining }`).
+
 ### `POST /api/v1/answer`
 
 ```json
@@ -124,6 +128,7 @@
 - 검증: 2KB, `path`는 `/`로 시작 200자, `depth` 0/25/50/75/100, `seconds` 0~86400, `position` 1~6, `source` chat/answer/list/header. 아니면 400 `INVALID_EVENT`
 - 리퍼러는 서버에서 호스트와 검색엔진 검색어만 뽑아 저장 (`events.js` parseReferrer)
 - IP당 분당 60회 (`EVENTS_LIMITER`, 검색 한도와 별도)
+- `Origin`이 블로그(`BLOG_ORIGIN`)가 아니면 저장하지 않고 204 (로컬 개발 서버·스크립트가 통계를 오염시켜서)
 
 `POST /api/v1/search`는 선택 필드 `source: "header"`를 받는다 (헤더 검색은 질문 기록에서 제외).
 

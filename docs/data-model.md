@@ -68,7 +68,7 @@ seed에서 행을 지워도 DB에서 지워지지 않는다 → 삭제는 `wrang
 | `result_clicks` | 챗봇·헤더 검색에서 글 카드 클릭 | `post_id`, `position`(목록 순위), `source`(`chat`/`answer`/`list`/`header`), `query`(정규화한 질문, 첫 목록은 null) |
 | `search_queries` | 결과가 있었던 챗봇 질문 | `query`, `mode`(search/category/recent/answer), `post_ids`(처음 보여준 글 JSON) |
 
-결과 0건 질문은 계속 `search_misses`에만. 헤더 검색은 타이핑 중 글자라 질문으로 기록하지 않고, 클릭할 때 `result_clicks.query`로 남는다. 전체 리퍼러 URL은 저장하지 않는다.
+평균 머문 시간은 방문 하나를 최대 30분으로 잘라 계산 (탭을 몇 시간 열어 둔 방문이 평균을 왜곡해서, 원본 `seconds`는 그대로). 결과 0건 질문은 계속 `search_misses`에만. 헤더 검색은 타이핑 중 글자라 질문으로 기록하지 않고, 클릭할 때 `result_clicks.query`로 남는다. 전체 리퍼러 URL은 저장하지 않는다.
 
 ### gsc_rows (0008)
 

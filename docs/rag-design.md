@@ -107,6 +107,10 @@ RRF(k=60)로 세 목록을 합치고 **글당 가장 좋은 청크 1개**만 남
 
 모델 선택 근거와 비교: [ADR 0008](adr/0008-answer-mode-workers-ai.md). 1회 ≈ 15 neurons, 응답 10분 캐시.
 
+## AI 3줄 요약 (`summary.js`)
+
+글을 (다시) 색인할 때 본문 앞 3,000자로 Gemma 4(생각 끔)가 세 줄 요약을 만들어 `posts.ai_summary`에 저장한다. 실패하면 비워 두고 색인은 그대로 성공. 글마다 한 번이라 무료 한도 부담이 작다 (1회 ≈ 20 neurons).
+
 ## 인사이트: 질문 주제와 콘텐츠 공백 (`topics.js`, `weekly.js`)
 
 1. 기간 안의 질문을 모은다: 결과가 있던 질문(`search_queries`), 0건(`search_misses`), 👎(`search_feedback`). 3회 이상 묻고 클릭률 20% 미만이면 "클릭 적음"
