@@ -1,6 +1,7 @@
 import { errorBody, json } from './http.js';
 import { feedbackReport } from './feedback.js';
 import { syncSearchConsole } from './gsc.js';
+import { assistDraft } from './assist.js';
 import { insights } from './insights.js';
 import { backfillSummaries } from './summary.js';
 import { topicReport } from './topics.js';
@@ -28,6 +29,22 @@ function authorized(request, env) {
   return header.startsWith('Bearer ') && safeEqual(header.slice(7), token);
 }
 
+const MAX_DRAFT_TITLE = 200;
+const MAX_DRAFT_TEXT = 20000;
+
+/** {"title", "text"} for the writing helper, or null when invalid. */
+async function readDraft(request) {
+  try {
+    const { title, text = '' } = JSON.parse(await request.text());
+    if (typeof title !== 'string' || typeof text !== 'string') return null;
+    const trimmed = title.trim();
+    if (!trimmed || trimmed.length > MAX_DRAFT_TITLE || text.length > MAX_DRAFT_TEXT) return null;
+    return { title: trimmed, text };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Admin routes: POST /admin/ingest (run one sync pass now), GET /admin/preview?id=<postId> (parse only).
  * Returns null for non-admin paths so the main router can continue.
@@ -51,6 +68,11 @@ export async function handleAdmin(request, env, { pathname, searchParams }, requ
       if (!/^\d{1,9}$/.test(id)) return json(errorBody('INVALID_ID', 'id must be a post number', requestId), 400, headers);
       const scores = await similarScores(env, Number(id));
       return json({ id: Number(id), scores: scores?.slice(0, 10) ?? null, requestId }, 200, headers);
+    }
+    if (request.method === 'POST' && pathname === '/admin/assist') {
+      const draft = await readDraft(request);
+      if (!draft) return json(errorBody('INVALID_DRAFT', 'title 1-200 chars, text up to 20000 chars', requestId), 400, headers);
+      return json({ ...(await assistDraft(env, draft)), requestId }, 200, headers);
     }
     if (request.method === 'POST' && pathname === '/admin/summaries') {
       const limit = Number(searchParams.get('limit') ?? 5);
