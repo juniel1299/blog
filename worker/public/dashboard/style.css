@@ -103,6 +103,14 @@ tbody tr:last-child td { border-bottom: none; }
 .weekly summary { cursor: pointer; }
 .weekly-old { margin: 8px 0; }
 button:disabled { opacity: 0.6; cursor: default; }
+.assist form { display: grid; gap: 8px; margin-bottom: 12px; }
+.assist input, .assist textarea {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--bg); color: var(--text); font: inherit;
+}
+.assist form button { justify-self: start; }
+.assist h3 { margin: 14px 0 6px; font-size: 0.9rem; }
+.assist ul { margin: 0; padding-left: 1.2em; }
 .rising { margin: 0; padding-left: 1.2em; }
 .rising li { margin: 6px 0; }
 

@@ -33,6 +33,7 @@
 | GET | `/admin/misses?days=<1~90>` | `{ days, misses: [{query, count, last_seen}] }` 결과 0건 질문 상위 50개 (기본 30일) | 400 `INVALID_DAYS` |
 | GET | `/admin/insights?days=<1~90>` | 인사이트 대시보드 데이터 (`google`: Search Console 합계·검색어·노출 많고 클릭 적은 검색어 포함): `summary`(조회·평균 시간·읽은 깊이·끝까지 읽음 비율·질문·AI 답변·클릭·0건·👍/👎), `daily`(한국 날짜별 조회), `posts`(글별 조회·이전 기간 대비 변화·평균 시간·읽힘률·챗봇 클릭), `rising`, `sources`, `referrers`, `keywords`, `questions`(횟수·AI 답변·클릭률), `clickSources`, `misses`, `disliked`. `cache-control: no-store` | 400 `INVALID_DAYS` |
 | GET | `/admin/insights/topics?days=<1~90>` | `{ days, topics: [{label, count, examples, kinds}], gaps: [{label, count, examples, kinds, type: new\|improve, nearest: {postId, title, url, score}}] }` 질문 주제와 다음 글 후보 | 400 `INVALID_DAYS` |
+| POST | `/admin/assist` | 새 글 도우미: `{ title, text }` → `{ related: [{postId, title, url, score}], category, tags, series: {name, count, nextOrder, last} \| null, docs }`. 초안은 저장하지 않음 (임베딩 → Vectorize 0.55 이상, 관련 글의 카테고리·태그 빈도, 제목 `[이름]`으로 시리즈, 큐레이션 문서) | 400 `INVALID_DRAFT` |
 | POST | `/admin/gsc/sync` | Search Console 최근 7일을 지금 가져옴 `{ rows, start, end }` 또는 `{ skipped: true }`(비밀값 없음). 실패 시 500, 원인(구글 메시지)은 Worker 로그에 | 500 `ADMIN_FAILED` |
 | GET | `/admin/weekly` | `{ weeks: [{week, summary, report, createdAt}] }` 최근 12주 주간 인사이트 | |
 | POST | `/admin/weekly` | 이번 주(한국 시간 월요일 기준) 주간 인사이트를 지금 만들어 저장 (덮어씀)하고 노션으로 보냄 `{ week, summary, report, notion: {pageId, url} \| {skipped: true} \| {error} }` | 500 `ADMIN_FAILED` |

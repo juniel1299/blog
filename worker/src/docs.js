@@ -85,7 +85,11 @@ export async function relatedDocs(env, postId) {
     .bind(postId)
     .first();
   if (!post) return null;
+  return matchDocs({ title: post.title, category: post.category, tags: parseJsonArray(post.tags) }, await loadDocs(env));
+}
+
+/** All curated doc links with lowercased keywords. */
+export async function loadDocs(env) {
   const { results } = await env.DB.prepare('SELECT id, technology, title, url, description, keywords FROM doc_links').all();
-  const docs = results.map((row) => ({ ...row, keywords: parseJsonArray(row.keywords).map((k) => k.toLowerCase()) }));
-  return matchDocs({ title: post.title, category: post.category, tags: parseJsonArray(post.tags) }, docs);
+  return results.map((row) => ({ ...row, keywords: parseJsonArray(row.keywords).map((k) => k.toLowerCase()) }));
 }

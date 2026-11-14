@@ -224,6 +224,7 @@ function showLogin(message = '') {
   $('[data-login]').hidden = false;
   $('[data-controls]').hidden = true;
   $('[data-report]').hidden = true;
+  $('[data-assist]').hidden = true;
   $('[data-status]').textContent = '';
   $('[data-login-error]').textContent = message;
   $('#token').focus();
@@ -255,6 +256,7 @@ async function load(days) {
   }
   const [report, topics, weekly] = await Promise.all(responses.map((res) => res.json()));
   render(report, topics, weekly.weeks, (button) => buildWeekly(button, token, days));
+  $('[data-assist]').hidden = false;
   $('[data-status]').textContent = `최근 ${days}일 · ${new Date().toLocaleString('ko-KR')} 기준`;
 }
 
@@ -272,6 +274,48 @@ async function buildWeekly(button, token, days) {
     button.textContent = '실패했어요. 다시 시도';
   }
 }
+
+function assistResult(r) {
+  const links = r.related.map((p) => el('li', {}, [postLink(p), el('span', { className: 'muted', text: ` (${p.score})` })]));
+  const copy = el('button', { className: 'ghost', text: '링크 목록 복사', attrs: { type: 'button' } });
+  copy.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(r.related.map((p) => `${p.title} - ${p.url}`).join('\n'));
+      copy.textContent = '복사됨';
+    } catch {
+      copy.textContent = '복사 실패';
+    }
+  });
+  const s = r.series;
+  return [
+    el('h3', { text: '링크할 만한 내 글' }),
+    r.related.length ? el('ul', {}, links) : empty('비슷한 글이 없어요.'),
+    ...(r.related.length ? [copy] : []),
+    el('h3', { text: '카테고리 · 태그' }),
+    el('p', { text: r.category ? `${r.category} · ${r.tags.join(', ') || '태그 추천 없음'}` : '추천 없음' }),
+    el('h3', { text: '시리즈' }),
+    s ? el('p', {}, [`${s.name} 시리즈 ${s.count}편, 다음은 ${s.nextOrder}편 · 지난 편: `, postLink(s.last)]) : empty('이어지는 시리즈가 없어요. (제목을 [이름]으로 시작하면 찾아요)'),
+    el('h3', { text: '공식 문서' }),
+    r.docs.length ? el('ul', {}, r.docs.map((d) => el('li', {}, [postLink({ title: d.title, url: d.url })]))) : empty('맞는 문서가 없어요.'),
+  ];
+}
+
+$('[data-assist-form]').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const out = $('[data-assist-result]');
+  out.replaceChildren(el('p', { className: 'muted', text: '찾는 중…' }));
+  try {
+    const res = await fetch('/admin/assist', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${readToken()}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ title: $('#draft-title').value, text: $('#draft-text').value }),
+    });
+    if (!res.ok) throw new Error(String(res.status));
+    out.replaceChildren(...assistResult(await res.json()));
+  } catch {
+    out.replaceChildren(el('p', { className: 'error', text: '추천을 받지 못했어요. 잠시 후 다시 시도해 주세요.' }));
+  }
+});
 
 let currentDays = 7;
 

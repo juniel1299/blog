@@ -35,6 +35,19 @@
 
     <p class="status" data-status role="status"></p>
     <div data-report hidden></div>
+
+    <section class="card assist" data-assist hidden>
+      <h2>새 글 도우미</h2>
+      <p class="muted hint">초안 제목과 본문을 넣으면 링크할 만한 내 글, 카테고리·태그, 이어지는 시리즈, 공식 문서를 추천해요. 저장되지 않아요.</p>
+      <form data-assist-form>
+        <label class="sr-only" for="draft-title">제목</label>
+        <input id="draft-title" maxlength="200" required placeholder="예: [React] 12. 커스텀 훅 만들기">
+        <label class="sr-only" for="draft-text">본문</label>
+        <textarea id="draft-text" maxlength="20000" rows="6" placeholder="본문 (앞부분만 있어도 돼요)"></textarea>
+        <button type="submit">추천 받기</button>
+      </form>
+      <div data-assist-result></div>
+    </section>
   </main>
 </body>
 </html>
