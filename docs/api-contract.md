@@ -95,6 +95,10 @@
 
 `{ "postId", "series": { "name", "posts": [{ postId, title, url }] } | null, "requestId" }`: 제목이 `[이름] 7. …` 또는 `[이름] … - 2` 형식인 글의 시리즈(같은 이름, 회차 순, 2편 이상). 시리즈가 아니면 `series: null`, 색인되지 않은 글 404 `POST_NOT_FOUND`. 스킨이 글 머리 아래 시리즈 상자에 쓴다.
 
+### `GET /api/v1/posts/:postId/summary`
+
+`{ "postId", "summary": ["…", "…", "…"] | null, "requestId" }`: 글을 색인할 때 Workers AI가 만든 3줄 요약 (`posts.ai_summary`, 0009). 아직 없으면 null, 색인 안 된 글 404. 스킨이 글 머리 아래 "AI 3줄 요약"으로 보여준다. 관리자 `POST /admin/summaries?limit=1~20`이 요약 없는 글을 채운다 (`{ done, remaining }`).
+
 ### `POST /api/v1/answer`
 
 ```json

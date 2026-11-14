@@ -67,7 +67,9 @@ export async function initSeries(header, apiBase, postId, fetchImpl = fetch) {
     if (!res.ok) return;
     const { series } = await res.json();
     const box = series && renderSeries(series, postId);
-    if (box) header.after(box);
+    // Keep the AI summary (if it arrived first) directly under the header.
+    const summary = header.nextElementSibling?.classList.contains('ai-summary') ? header.nextElementSibling : null;
+    if (box) (summary ?? header).after(box);
   } catch {
     // Series is a nice-to-have; never break the page over it.
   }

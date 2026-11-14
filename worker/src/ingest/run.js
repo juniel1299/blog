@@ -1,3 +1,4 @@
+import { summarizePost } from '../summary.js';
 import { chunkSections } from './chunk.js';
 import { extractPost } from './extract.js';
 import { parseSitemap, planSync } from './sitemap.js';
@@ -81,7 +82,19 @@ async function indexPost(env, entry, now) {
         .bind(ids[i], entry.id, post.title, chunk.heading ?? '', chunk.text),
     ]),
   ]);
+  if (status === 'indexed') await refreshSummary(env, entry.id, post.title, indexed);
   return status;
+}
+
+/** New 3-line summary for this version of the post; a failure clears it (never fails indexing). */
+async function refreshSummary(env, postId, title, chunks) {
+  try {
+    const text = chunks.map((chunk) => (chunk.heading ? `${chunk.heading}\n${chunk.text}` : chunk.text)).join('\n');
+    const lines = await summarizePost(env, title, text);
+    await env.DB.prepare('UPDATE posts SET ai_summary = ? WHERE id = ?').bind(lines ? JSON.stringify(lines) : null, postId).run();
+  } catch (error) {
+    console.error(JSON.stringify({ event: 'summary_store_failed', postId, error: String(error) }));
+  }
 }
 
 async function deletePost(env, postId) {

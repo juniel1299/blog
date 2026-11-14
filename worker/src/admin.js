@@ -2,6 +2,7 @@ import { errorBody, json } from './http.js';
 import { feedbackReport } from './feedback.js';
 import { syncSearchConsole } from './gsc.js';
 import { insights } from './insights.js';
+import { backfillSummaries } from './summary.js';
 import { topicReport } from './topics.js';
 import { buildAndPublish, listWeekly } from './weekly.js';
 import { readPost, runIngest } from './ingest/run.js';
@@ -50,6 +51,11 @@ export async function handleAdmin(request, env, { pathname, searchParams }, requ
       if (!/^\d{1,9}$/.test(id)) return json(errorBody('INVALID_ID', 'id must be a post number', requestId), 400, headers);
       const scores = await similarScores(env, Number(id));
       return json({ id: Number(id), scores: scores?.slice(0, 10) ?? null, requestId }, 200, headers);
+    }
+    if (request.method === 'POST' && pathname === '/admin/summaries') {
+      const limit = Number(searchParams.get('limit') ?? 5);
+      if (!Number.isInteger(limit) || limit < 1 || limit > 20) return json(errorBody('INVALID_LIMIT', 'limit must be 1-20', requestId), 400, headers);
+      return json({ ...(await backfillSummaries(env, limit)), requestId }, 200, headers);
     }
     if (request.method === 'POST' && pathname === '/admin/gsc/sync') {
       return json({ ...(await syncSearchConsole(env)), requestId }, 200, headers);

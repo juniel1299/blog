@@ -1,5 +1,6 @@
 import { answerQuestion } from './answer.js';
 import { relatedDocs } from './docs.js';
+import { storedSummary } from './summary.js';
 import { readEvent, recordEvent, recordQuery } from './events.js';
 import { readFeedback, recordFeedback } from './feedback.js';
 import { errorBody, json } from './http.js';
@@ -18,7 +19,7 @@ const FEEDBACK_PATH = '/api/v1/feedback';
 const ANSWER_PATH = '/api/v1/answer';
 const EVENTS_PATH = '/api/v1/events';
 const POST_METHOD_PATHS = new Set([SEARCH_PATH, FEEDBACK_PATH, ANSWER_PATH, EVENTS_PATH]);
-const POST_PATH = /^\/api\/v1\/posts\/(\d{1,9})\/(docs|similar|series)$/;
+const POST_PATH = /^\/api\/v1\/posts\/(\d{1,9})\/(docs|similar|series|summary)$/;
 
 function cacheKey(normalized, kind = 'v2') {
   return new Request(`https://search-cache.internal/${kind}?q=${encodeURIComponent(normalized)}`);
@@ -117,6 +118,11 @@ async function handlePost(env, postId, kind, requestId, headers) {
       if (docs === null) return json(errorBody('POST_NOT_FOUND', '글을 찾을 수 없어요.', requestId), 404, headers);
       return json({ postId, docs, requestId }, 200, { ...headers, ...PUBLIC_CACHE });
     }
+    if (kind === 'summary') {
+      const summary = await storedSummary(env, postId);
+      if (summary === undefined) return json(errorBody('POST_NOT_FOUND', '글을 찾을 수 없어요.', requestId), 404, headers);
+      return json({ postId, summary, requestId }, 200, { ...headers, ...PUBLIC_CACHE });
+    }
     if (kind === 'series') {
       const series = await seriesPosts(env, postId);
       if (series === undefined) return json(errorBody('POST_NOT_FOUND', '글을 찾을 수 없어요.', requestId), 404, headers);
@@ -175,6 +181,7 @@ async function handleRecent(env, requestId, headers) {
  *   GET  /api/v1/posts/:postId/docs     -> { postId, docs }
  *   GET  /api/v1/posts/:postId/similar  -> { postId, posts }
  *   GET  /api/v1/posts/:postId/series   -> { postId, series }
+ *   GET  /api/v1/posts/:postId/summary  -> { postId, summary }
  *   POST /api/v1/feedback               -> { ok }
  *   POST /api/v1/answer                 -> { query, answer, sources }
  *   POST /api/v1/events                 -> 204 (page view / card click beacon)
