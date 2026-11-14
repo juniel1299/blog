@@ -44,9 +44,14 @@ describe('POST /api/v1/events', () => {
   }
 
   // sendBeacon posts a text/plain string, so the body is read as text.
-  const send = (body, e = env()) =>
+  // Browsers send Origin on every POST, sendBeacon included.
+  const send = (body, e = env(), origin = BLOG) =>
     worker.fetch(
-      new Request('https://api.test/api/v1/events', { method: 'POST', body: typeof body === 'string' ? body : JSON.stringify(body) }),
+      new Request('https://api.test/api/v1/events', {
+        method: 'POST',
+        headers: origin ? { origin } : {},
+        body: typeof body === 'string' ? body : JSON.stringify(body),
+      }),
       e,
       {},
     );
@@ -90,6 +95,15 @@ describe('POST /api/v1/events', () => {
     const res = await send({ type: 'view', path: '/', postId: null, depth: 0, seconds: 3 }, env({ fail: true }));
     expect(res.status).toBe(204);
     expect(log).toHaveBeenCalled();
+  });
+
+  test('only pages on the blog are counted: dev servers and scripts get 204 but nothing is stored', async () => {
+    const view = { type: 'view', path: '/post.html', postId: null, depth: 0, seconds: 3 };
+    for (const origin of ['http://localhost:5173', null]) {
+      const e = env();
+      expect((await send(view, e, origin)).status).toBe(204);
+      expect(e.inserted).toEqual([]);
+    }
   });
 
   test('GET is not allowed', async () => {

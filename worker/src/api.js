@@ -149,6 +149,8 @@ async function handleFeedback(request, env, requestId, headers) {
 async function handleEvent(request, env, requestId, headers) {
   const event = await readEvent(request);
   if (!event) return json(errorBody('INVALID_EVENT', '잘못된 이벤트입니다.', requestId), 400, headers);
+  // Only the live blog counts: the local dev server and scripts use the same API (and polluted the stats).
+  if (request.headers.get('origin') !== env.BLOG_ORIGIN) return new Response(null, { status: 204, headers });
   try {
     await recordEvent(env, event);
   } catch (error) {

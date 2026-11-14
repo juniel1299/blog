@@ -124,6 +124,7 @@
 - 검증: 2KB, `path`는 `/`로 시작 200자, `depth` 0/25/50/75/100, `seconds` 0~86400, `position` 1~6, `source` chat/answer/list/header. 아니면 400 `INVALID_EVENT`
 - 리퍼러는 서버에서 호스트와 검색엔진 검색어만 뽑아 저장 (`events.js` parseReferrer)
 - IP당 분당 60회 (`EVENTS_LIMITER`, 검색 한도와 별도)
+- `Origin`이 블로그(`BLOG_ORIGIN`)가 아니면 저장하지 않고 204 (로컬 개발 서버·스크립트가 통계를 오염시켜서)
 
 `POST /api/v1/search`는 선택 필드 `source: "header"`를 받는다 (헤더 검색은 질문 기록에서 제외).
 
